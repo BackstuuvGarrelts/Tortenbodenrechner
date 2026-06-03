@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f7f0e8">
+  <title>Tortenboden Rechner</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Backrechner</p>
+        <h1>Tortenboden Rechner</h1>
+      </div>
+      <button class="icon-button" id="resetButton" type="button" aria-label="Alles zurücksetzen" title="Alles zurücksetzen">↺</button>
+    </header>
+
+    <section class="section recipe-section" aria-labelledby="recipeTitle">
+      <div class="section-heading">
+        <h2 id="recipeTitle">Grundrezept</h2>
+        <div class="heading-actions">
+          <output id="baseTotal" class="pill">0 g Masse</output>
+          <button class="lock-button" id="recipeLockButton" type="button" aria-pressed="true">Bearbeiten</button>
+        </div>
+      </div>
+      <div class="ingredient-grid">
+        <label class="field">
+          <span>Mehl</span>
+          <input id="flourInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+          <small>Gramm</small>
+        </label>
+        <label class="field">
+          <span>Eier</span>
+          <input id="eggsInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+          <small>Gramm</small>
+        </label>
+        <label class="field">
+          <span>Wasser</span>
+          <input id="waterInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+          <small>Gramm</small>
+        </label>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="ringsTitle">
+      <div class="section-heading">
+        <h2 id="ringsTitle">Tortenböden</h2>
+        <button class="text-button" id="addRingButton" type="button">+ Größe</button>
+      </div>
+      <div id="ringList" class="ring-list" aria-live="polite"></div>
+    </section>
+
+    <section class="summary-band" aria-labelledby="summaryTitle">
+      <div class="section-heading">
+        <h2 id="summaryTitle">Gesamtmasse</h2>
+        <output id="totalMass" class="total-number">0 g</output>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span>Mehl</span>
+          <strong id="flourTotal">0 g</strong>
+        </div>
+        <div class="summary-item">
+          <span>Eier</span>
+          <strong id="eggsTotal">0 g</strong>
+        </div>
+        <div class="summary-item">
+          <span>Wasser</span>
+          <strong id="waterTotal">0 g</strong>
+        </div>
+      </div>
+      <p id="ratioWarning" class="warning" hidden>Bitte gib im Grundrezept mindestens eine Zutat mit Gewicht ein.</p>
+    </section>
+  </main>
+
+  <template id="ringTemplate">
+    <article class="ring-row">
+      <label class="compact-field name-field">
+        <span>Name</span>
+        <input data-field="name" type="text" maxlength="28">
+      </label>
+      <label class="compact-field">
+        <span>Masse</span>
+        <input data-field="mass" inputmode="decimal" type="number" min="0" step="1">
+      </label>
+      <label class="compact-field count-field">
+        <span>Anzahl</span>
+        <input data-field="count" inputmode="numeric" type="number" min="0" step="1">
+      </label>
+      <button class="icon-button remove-button" data-action="remove" type="button" aria-label="Größe entfernen" title="Größe entfernen">×</button>
+    </article>
+  </template>
+
+  <script src="./app.js"></script>
+</body>
+</html>
