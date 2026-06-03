@@ -1,6 +1,6 @@
 {
-  "name": "Tortenboden Rechner",
-  "short_name": "Tortenboden",
+  "name": "Backrechner",
+  "short_name": "Backrechner",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#fffaf5",

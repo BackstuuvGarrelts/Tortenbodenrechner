@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f7f0e8">
-  <title>Tortenboden Rechner</title>
+  <title>Backrechner</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./styles.css">
 </head>
@@ -28,67 +28,136 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">Backrechner</p>
-        <h1>Tortenboden Rechner</h1>
+        <h1 id="appTitle">Tortenboden Rechner</h1>
       </div>
-      <button class="icon-button" id="resetButton" type="button" aria-label="Alles zurücksetzen" title="Alles zurücksetzen">↺</button>
+      <button class="icon-button" id="resetButton" type="button" aria-label="Aktuelles Rezept zurücksetzen" title="Aktuelles Rezept zurücksetzen">↺</button>
     </header>
 
-    <section class="section recipe-section" aria-labelledby="recipeTitle">
-      <div class="section-heading">
-        <h2 id="recipeTitle">Grundrezept</h2>
-        <div class="heading-actions">
-          <output id="baseTotal" class="pill">0 g Masse</output>
-          <button class="lock-button" id="recipeLockButton" type="button" aria-pressed="true">Bearbeiten</button>
-        </div>
-      </div>
-      <div class="ingredient-grid">
-        <label class="field">
-          <span>Mehl</span>
-          <input id="flourInput" inputmode="decimal" type="number" min="0" step="1" value="0">
-          <small>Gramm</small>
-        </label>
-        <label class="field">
-          <span>Eier</span>
-          <input id="eggsInput" inputmode="decimal" type="number" min="0" step="1" value="0">
-          <small>Gramm</small>
-        </label>
-        <label class="field">
-          <span>Wasser</span>
-          <input id="waterInput" inputmode="decimal" type="number" min="0" step="1" value="0">
-          <small>Gramm</small>
-        </label>
-      </div>
-    </section>
+    <nav class="mode-switch" aria-label="Rezept wählen">
+      <button class="mode-button is-active" data-mode="cake" type="button">Tortenböden</button>
+      <button class="mode-button" data-mode="quark" type="button">Quarkbällchen</button>
+    </nav>
 
-    <section class="section" aria-labelledby="ringsTitle">
-      <div class="section-heading">
-        <h2 id="ringsTitle">Tortenböden</h2>
-        <button class="text-button" id="addRingButton" type="button">+ Größe</button>
-      </div>
-      <div id="ringList" class="ring-list" aria-live="polite"></div>
-    </section>
+    <div class="recipe-view" id="cakeView">
+      <section class="section" aria-labelledby="ringsTitle">
+        <div class="section-heading">
+          <h2 id="ringsTitle">Tortenböden</h2>
+          <button class="text-button" id="addRingButton" type="button">+ Größe</button>
+        </div>
+        <div id="ringList" class="ring-list" aria-live="polite"></div>
+      </section>
 
-    <section class="summary-band" aria-labelledby="summaryTitle">
-      <div class="section-heading">
-        <h2 id="summaryTitle">Gesamtmasse</h2>
-        <output id="totalMass" class="total-number">0 g</output>
-      </div>
-      <div class="summary-grid">
-        <div class="summary-item">
-          <span>Mehl</span>
-          <strong id="flourTotal">0 g</strong>
+      <section class="summary-band" aria-labelledby="summaryTitle">
+        <div class="section-heading">
+          <h2 id="summaryTitle">Gesamtmasse</h2>
+          <output id="totalMass" class="total-number">0 g</output>
         </div>
-        <div class="summary-item">
-          <span>Eier</span>
-          <strong id="eggsTotal">0 g</strong>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span>Mehl</span>
+            <strong id="flourTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Eier</span>
+            <strong id="eggsTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Wasser</span>
+            <strong id="waterTotal">0 g</strong>
+          </div>
         </div>
-        <div class="summary-item">
-          <span>Wasser</span>
-          <strong id="waterTotal">0 g</strong>
+        <p id="ratioWarning" class="warning" hidden>Bitte gib im Grundrezept mindestens eine Zutat mit Gewicht ein.</p>
+      </section>
+
+      <section class="section recipe-section cake-recipe-section" aria-labelledby="cakeRecipeTitle">
+        <div class="section-heading">
+          <h2 id="cakeRecipeTitle">Grundrezept</h2>
+          <div class="heading-actions">
+            <output id="baseTotal" class="pill">0 g Masse</output>
+            <button class="lock-button" id="cakeLockButton" type="button" aria-pressed="true">Bearbeiten</button>
+          </div>
         </div>
-      </div>
-      <p id="ratioWarning" class="warning" hidden>Bitte gib im Grundrezept mindestens eine Zutat mit Gewicht ein.</p>
-    </section>
+        <div class="ingredient-grid">
+          <label class="field">
+            <span>Mehl</span>
+            <input id="flourInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Eier</span>
+            <input id="eggsInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Wasser</span>
+            <input id="waterInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <small>Gramm</small>
+          </label>
+        </div>
+      </section>
+    </div>
+
+    <div class="recipe-view" id="quarkView" hidden>
+      <section class="section" aria-labelledby="quarkCountTitle">
+        <div class="section-heading">
+          <h2 id="quarkCountTitle">Rezeptdurchgänge</h2>
+          <output id="quarkRunsLabel" class="pill">0× Rezept</output>
+        </div>
+        <label class="field count-wide">
+          <span>Anzahl</span>
+          <input id="quarkRunsInput" inputmode="numeric" type="number" min="0" step="1" value="0">
+          <small>Wie oft möchtest du das Grundrezept machen?</small>
+        </label>
+      </section>
+
+      <section class="summary-band" aria-labelledby="quarkSummaryTitle">
+        <div class="section-heading">
+          <h2 id="quarkSummaryTitle">Gesamtmasse</h2>
+          <output id="quarkTotalMass" class="total-number">0 g</output>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span>Mehl</span>
+            <strong id="quarkFlourTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Wasser</span>
+            <strong id="quarkWaterTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Quark</span>
+            <strong id="quarkTotal">0 g</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="section recipe-section quark-recipe-section" aria-labelledby="quarkRecipeTitle">
+        <div class="section-heading">
+          <h2 id="quarkRecipeTitle">Grundrezept</h2>
+          <div class="heading-actions">
+            <output id="quarkBaseTotal" class="pill">0 g Masse</output>
+            <button class="lock-button" id="quarkLockButton" type="button" aria-pressed="true">Bearbeiten</button>
+          </div>
+        </div>
+        <div class="ingredient-grid">
+          <label class="field">
+            <span>Mehl</span>
+            <input id="quarkFlourInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Wasser</span>
+            <input id="quarkWaterInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Quark</span>
+            <input id="quarkInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <small>Gramm</small>
+          </label>
+        </div>
+      </section>
+    </div>
   </main>
 
   <template id="ringTemplate">
