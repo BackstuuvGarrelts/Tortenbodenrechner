@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f7f0e8">
   <title>Backrechner</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=4">
 </head>
 <body>
   <section class="pin-gate" id="pinGate" aria-labelledby="pinTitle">
@@ -80,17 +80,17 @@
         <div class="ingredient-grid">
           <label class="field">
             <span>Mehl</span>
-            <input id="flourInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <input id="flourInput" inputmode="decimal" type="text">
             <small>Gramm</small>
           </label>
           <label class="field">
             <span>Eier</span>
-            <input id="eggsInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <input id="eggsInput" inputmode="decimal" type="text">
             <small>Gramm</small>
           </label>
           <label class="field">
             <span>Wasser</span>
-            <input id="waterInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <input id="waterInput" inputmode="decimal" type="text">
             <small>Gramm</small>
           </label>
         </div>
@@ -105,7 +105,7 @@
         </div>
         <label class="field count-wide">
           <span>Anzahl</span>
-          <input id="quarkRunsInput" inputmode="numeric" type="number" min="0" step="1" value="0">
+            <input id="quarkRunsInput" inputmode="numeric" type="text">
           <small>Wie oft möchtest du das Grundrezept machen?</small>
         </label>
       </section>
@@ -142,17 +142,17 @@
         <div class="ingredient-grid">
           <label class="field">
             <span>Mehl</span>
-            <input id="quarkFlourInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <input id="quarkFlourInput" inputmode="decimal" type="text">
             <small>Gramm</small>
           </label>
           <label class="field">
             <span>Wasser</span>
-            <input id="quarkWaterInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <input id="quarkWaterInput" inputmode="decimal" type="text">
             <small>Gramm</small>
           </label>
           <label class="field">
             <span>Quark</span>
-            <input id="quarkInput" inputmode="decimal" type="number" min="0" step="1" value="0">
+            <input id="quarkInput" inputmode="decimal" type="text">
             <small>Gramm</small>
           </label>
         </div>
@@ -168,16 +168,16 @@
       </label>
       <label class="compact-field">
         <span>Masse</span>
-        <input data-field="mass" inputmode="decimal" type="number" min="0" step="1">
+        <input data-field="mass" inputmode="decimal" type="text">
       </label>
       <label class="compact-field count-field">
         <span>Anzahl</span>
-        <input data-field="count" inputmode="numeric" type="number" min="0" step="1">
+        <input data-field="count" inputmode="numeric" type="text">
       </label>
       <button class="icon-button remove-button" data-action="remove" type="button" aria-label="Größe entfernen" title="Größe entfernen">×</button>
     </article>
   </template>
 
-  <script src="./app.js"></script>
+  <script src="./app.js?v=4"></script>
 </body>
 </html>

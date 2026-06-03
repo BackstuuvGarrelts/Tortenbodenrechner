@@ -155,11 +155,13 @@ function cloneDefaultState() {
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {}
 }
 
 function toNumber(value) {
-  const normalized = Number(String(value ?? "").replace(",", "."));
+  const normalized = Number(String(value ?? "").trim().replace(",", "."));
   return Number.isFinite(normalized) && normalized > 0 ? normalized : 0;
 }
 
@@ -340,7 +342,7 @@ els.quarkRunsInput.addEventListener("input", (event) => {
 
 els.ringList.addEventListener("input", (event) => {
   const row = event.target.closest(".ring-row");
-  if (!row) return;
+  if (!row || !event.target.dataset.field) return;
   updateRing(row.dataset.id, event.target.dataset.field, event.target.value);
 });
 
