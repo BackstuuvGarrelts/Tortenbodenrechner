@@ -1,4 +1,6 @@
 const STORAGE_KEY = "tortenboden-rechner:v1";
+const ACCESS_PIN = "6276";
+const UNLOCK_KEY = "tortenboden-rechner:unlocked";
 
 function uid() {
   if (globalThis.crypto && typeof crypto.randomUUID === "function") {
@@ -24,6 +26,10 @@ let state = loadState();
 let recipeLocked = true;
 
 const els = {
+  pinGate: document.querySelector("#pinGate"),
+  pinForm: document.querySelector("#pinForm"),
+  pinInput: document.querySelector("#pinInput"),
+  pinError: document.querySelector("#pinError"),
   recipeSection: document.querySelector(".recipe-section"),
   flourInput: document.querySelector("#flourInput"),
   eggsInput: document.querySelector("#eggsInput"),
@@ -40,6 +46,23 @@ const els = {
   ratioWarning: document.querySelector("#ratioWarning"),
   ringTemplate: document.querySelector("#ringTemplate")
 };
+
+function unlockApp() {
+  sessionStorage.setItem(UNLOCK_KEY, "true");
+  document.body.classList.remove("is-locked");
+  els.pinGate.hidden = true;
+}
+
+function lockAppIfNeeded() {
+  if (sessionStorage.getItem(UNLOCK_KEY) === "true") {
+    unlockApp();
+    return;
+  }
+
+  document.body.classList.add("is-locked");
+  els.pinGate.hidden = false;
+  setTimeout(() => els.pinInput.focus(), 0);
+}
 
 function loadState() {
   try {
@@ -192,6 +215,18 @@ els.recipeLockButton.addEventListener("click", () => {
   recipeLocked = !recipeLocked;
   renderRecipeLock();
 });
+els.pinForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (els.pinInput.value === ACCESS_PIN) {
+    els.pinInput.value = "";
+    els.pinError.hidden = true;
+    unlockApp();
+    return;
+  }
+
+  els.pinError.hidden = false;
+  els.pinInput.select();
+});
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
@@ -200,3 +235,4 @@ if ("serviceWorker" in navigator) {
 renderIngredients();
 renderRings();
 calculate();
+lockAppIfNeeded();

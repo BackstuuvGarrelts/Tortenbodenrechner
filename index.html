@@ -9,6 +9,21 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+  <section class="pin-gate" id="pinGate" aria-labelledby="pinTitle">
+    <div class="pin-panel">
+      <p class="eyebrow">Geschützt</p>
+      <h2 id="pinTitle">PIN eingeben</h2>
+      <form id="pinForm" class="pin-form">
+        <label class="field">
+          <span>PIN</span>
+          <input id="pinInput" inputmode="numeric" type="password" autocomplete="current-password">
+        </label>
+        <button class="text-button" type="submit">Öffnen</button>
+      </form>
+      <p id="pinError" class="warning" hidden>Die PIN stimmt nicht.</p>
+    </div>
+  </section>
+
   <main class="app-shell">
     <header class="topbar">
       <div>
