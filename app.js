@@ -56,7 +56,7 @@ const els = {
   cakeLockButton: document.querySelector("#cakeLockButton"),
   ringList: document.querySelector("#ringList"),
   addRingButton: document.querySelector("#addRingButton"),
-  resetButton: document.querySelector("#resetButton"),
+  cakeResetButton: document.querySelector("#cakeResetButton"),
   totalMass: document.querySelector("#totalMass"),
   flourTotal: document.querySelector("#flourTotal"),
   eggsTotal: document.querySelector("#eggsTotal"),
@@ -68,6 +68,7 @@ const els = {
   quarkInput: document.querySelector("#quarkInput"),
   quarkBaseTotal: document.querySelector("#quarkBaseTotal"),
   quarkLockButton: document.querySelector("#quarkLockButton"),
+  quarkResetButton: document.querySelector("#quarkResetButton"),
   quarkRunsInput: document.querySelector("#quarkRunsInput"),
   quarkRunsLabel: document.querySelector("#quarkRunsLabel"),
   quarkTotalMass: document.querySelector("#quarkTotalMass"),
@@ -308,19 +309,30 @@ function removeRing(id) {
   calculateCake();
 }
 
-function resetCurrentRecipe() {
+function resetCakeBaseRecipe() {
   const fresh = cloneDefaultState();
-  if (state.activeMode === "cake") {
-    state.cake = fresh.cake;
-    renderCakeIngredients();
-    renderRings();
-    calculateCake();
-  } else {
-    state.quark = fresh.quark;
-    renderQuarkIngredients();
-    calculateQuark();
-  }
+  state.cake.ingredients = fresh.cake.ingredients;
   saveState();
+  renderCakeIngredients();
+  calculateCake();
+}
+
+function resetQuarkBaseRecipe() {
+  const fresh = cloneDefaultState();
+  state.quark.ingredients = fresh.quark.ingredients;
+  saveState();
+  renderQuarkIngredients();
+  calculateQuark();
+}
+
+function confirmAndResetCakeBaseRecipe() {
+  if (!confirm("Grundrezept für Tortenböden wirklich zurücksetzen?")) return;
+  resetCakeBaseRecipe();
+}
+
+function confirmAndResetQuarkBaseRecipe() {
+  if (!confirm("Grundrezept für Quarkbällchen wirklich zurücksetzen?")) return;
+  resetQuarkBaseRecipe();
 }
 
 els.modeButtons.forEach((button) => {
@@ -353,7 +365,8 @@ els.ringList.addEventListener("click", (event) => {
 });
 
 els.addRingButton.addEventListener("click", addRing);
-els.resetButton.addEventListener("click", resetCurrentRecipe);
+els.cakeResetButton.addEventListener("click", confirmAndResetCakeBaseRecipe);
+els.quarkResetButton.addEventListener("click", confirmAndResetQuarkBaseRecipe);
 els.cakeLockButton.addEventListener("click", () => {
   cakeLocked = !cakeLocked;
   renderCakeLock();

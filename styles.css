@@ -228,7 +228,8 @@ input:focus {
 
 .text-button,
 .icon-button,
-.lock-button {
+.lock-button,
+.danger-button {
   display: inline-grid;
   place-items: center;
   min-height: 42px;
@@ -262,6 +263,15 @@ input:focus {
   border-color: var(--accent);
 }
 
+.danger-button {
+  width: 100%;
+  margin-top: 10px;
+  color: var(--accent-dark);
+  background: #fff5f1;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
 .icon-button {
   width: 42px;
   flex: 0 0 42px;
@@ -271,7 +281,8 @@ input:focus {
 
 .text-button:active,
 .icon-button:active,
-.lock-button:active {
+.lock-button:active,
+.danger-button:active {
   transform: translateY(1px);
 }
 
