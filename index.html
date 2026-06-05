@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f7f0e8">
   <title>Backrechner</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=4">
+  <link rel="stylesheet" href="./styles.css?v=10">
 </head>
 <body>
   <section class="pin-gate" id="pinGate" aria-labelledby="pinTitle">
@@ -30,14 +30,32 @@
         <p class="eyebrow">Backrechner</p>
         <h1 id="appTitle">Tortenboden Rechner</h1>
       </div>
+      <button class="back-button" id="homeButton" type="button" hidden>Zurück</button>
     </header>
 
-    <nav class="mode-switch" aria-label="Rezept wählen">
-      <button class="mode-button is-active" data-mode="cake" type="button">Tortenböden</button>
-      <button class="mode-button" data-mode="quark" type="button">Quarkbällchen</button>
-    </nav>
+    <section class="home-view" id="homeView" aria-labelledby="homeTitle">
+      <h2 id="homeTitle">Rechner auswählen</h2>
+      <div class="calculator-grid">
+        <button class="calculator-card" data-mode="cake" type="button">
+          <span>Tortenbodenrechner</span>
+          <small>Massen für Ringgrößen berechnen</small>
+        </button>
+        <button class="calculator-card" data-mode="quark" type="button">
+          <span>Quarkbällchenrechner</span>
+          <small>Rezeptdurchgänge hochrechnen</small>
+        </button>
+        <button class="calculator-card" data-mode="bread" type="button">
+          <span>Rosinenbrotrechner</span>
+          <small>Grundrezept nach Anzahl hochrechnen</small>
+        </button>
+        <button class="calculator-card" data-mode="pudding" type="button">
+          <span>Puddingrechner</span>
+          <small>Wasser und Puddingpulver berechnen</small>
+        </button>
+      </div>
+    </section>
 
-    <div class="recipe-view" id="cakeView">
+    <div class="recipe-view" id="cakeView" hidden>
       <section class="section" aria-labelledby="ringsTitle">
         <div class="section-heading">
           <h2 id="ringsTitle">Tortenböden</h2>
@@ -159,6 +177,176 @@
         <button class="danger-button" id="quarkResetButton" type="button">Grundrezept zurücksetzen</button>
       </section>
     </div>
+
+    <div class="recipe-view" id="breadView" hidden>
+      <section class="section" aria-labelledby="breadCountTitle">
+        <div class="section-heading">
+          <h2 id="breadCountTitle">Brote</h2>
+          <output id="breadRunsLabel" class="pill">0 g Teig</output>
+        </div>
+        <div class="ingredient-grid bread-target-grid">
+          <label class="field">
+            <span>Anzahl</span>
+            <input id="breadRunsInput" inputmode="numeric" type="text">
+            <small>Wie viele Brote?</small>
+          </label>
+          <label class="field">
+            <span>Brotgewicht</span>
+            <input id="breadWeightInput" inputmode="decimal" type="text">
+            <small>Gramm Teig pro Brot</small>
+          </label>
+        </div>
+      </section>
+
+      <section class="summary-band" aria-labelledby="breadSummaryTitle">
+        <div class="section-heading">
+          <h2 id="breadSummaryTitle">Gesamtmasse</h2>
+          <output id="breadTotalMass" class="total-number">0 g</output>
+        </div>
+        <div class="summary-grid bread-summary-grid">
+          <div class="summary-item">
+            <span>Vorteig</span>
+            <strong id="breadStarterTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Mehl</span>
+            <strong id="breadFlourTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Salz</span>
+            <strong id="breadSaltTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Trockenhefe</span>
+            <strong id="breadYeastTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Wasser Hefereaktivierung</span>
+            <strong id="breadStarterWaterTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Zucker</span>
+            <strong id="breadSugarTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Wasser Teig</span>
+            <strong id="breadDoughWaterTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Rosinen</span>
+            <strong id="breadRaisinsTotal">0 g</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="section recipe-section bread-recipe-section" aria-labelledby="breadRecipeTitle">
+        <div class="section-heading">
+          <h2 id="breadRecipeTitle">Grundrezept</h2>
+          <div class="heading-actions">
+            <output id="breadBaseTotal" class="pill">0 g Masse</output>
+            <button class="lock-button" id="breadLockButton" type="button" aria-pressed="true">Bearbeiten</button>
+          </div>
+        </div>
+        <div class="ingredient-grid bread-ingredient-grid">
+          <label class="field">
+            <span>Vorteig</span>
+            <input id="breadStarterInput" inputmode="decimal" type="text">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Mehl</span>
+            <input id="breadFlourInput" inputmode="decimal" type="text">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Salz</span>
+            <input id="breadSaltInput" inputmode="decimal" type="text">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Trockenhefe</span>
+            <input id="breadYeastInput" inputmode="decimal" type="text">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Wasser Hefereaktivierung</span>
+            <input id="breadStarterWaterInput" inputmode="decimal" type="text">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Zucker</span>
+            <input id="breadSugarInput" inputmode="decimal" type="text">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Wasser Teig</span>
+            <input id="breadDoughWaterInput" inputmode="decimal" type="text">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Rosinen</span>
+            <input id="breadRaisinsInput" inputmode="decimal" type="text">
+            <small>Gramm</small>
+          </label>
+        </div>
+        <button class="danger-button" id="breadResetButton" type="button">Grundrezept zurücksetzen</button>
+      </section>
+    </div>
+
+    <div class="recipe-view" id="puddingView" hidden>
+      <section class="section" aria-labelledby="puddingTargetTitle">
+        <div class="section-heading">
+          <h2 id="puddingTargetTitle">Zielmenge</h2>
+          <output id="puddingTargetLabel" class="pill">0 g Pudding</output>
+        </div>
+        <label class="field count-wide">
+          <span>Gesamtmenge</span>
+          <input id="puddingTargetInput" inputmode="decimal" type="text">
+          <small>Wie viel Pudding möchtest du herstellen?</small>
+        </label>
+      </section>
+
+      <section class="summary-band" aria-labelledby="puddingSummaryTitle">
+        <div class="section-heading">
+          <h2 id="puddingSummaryTitle">Zutaten</h2>
+          <output id="puddingTotalMass" class="total-number">0 g</output>
+        </div>
+        <div class="summary-grid pudding-summary-grid">
+          <div class="summary-item">
+            <span>Wasser</span>
+            <strong id="puddingWaterTotal">0 g</strong>
+          </div>
+          <div class="summary-item">
+            <span>Puddingpulver</span>
+            <strong id="puddingPowderTotal">0 g</strong>
+          </div>
+        </div>
+        <p id="puddingRatioWarning" class="warning" hidden>Bitte gib im Grundrezept mindestens eine Zutat mit Gewicht ein.</p>
+      </section>
+
+      <section class="section recipe-section pudding-recipe-section" aria-labelledby="puddingRecipeTitle">
+        <div class="section-heading">
+          <h2 id="puddingRecipeTitle">Grundrezept</h2>
+          <div class="heading-actions">
+            <output id="puddingBaseTotal" class="pill">0 g Masse</output>
+            <button class="lock-button" id="puddingLockButton" type="button" aria-pressed="true">Bearbeiten</button>
+          </div>
+        </div>
+        <div class="ingredient-grid pudding-ingredient-grid">
+          <label class="field">
+            <span>Wasser</span>
+            <input id="puddingWaterInput" inputmode="decimal" type="text">
+            <small>Gramm</small>
+          </label>
+          <label class="field">
+            <span>Puddingpulver</span>
+            <input id="puddingPowderInput" inputmode="decimal" type="text">
+            <small>Gramm</small>
+          </label>
+        </div>
+        <button class="danger-button" id="puddingResetButton" type="button">Grundrezept zurücksetzen</button>
+      </section>
+    </div>
   </main>
 
   <template id="ringTemplate">
@@ -179,6 +367,6 @@
     </article>
   </template>
 
-  <script src="./app.js?v=4"></script>
+  <script src="./app.js?v=10"></script>
 </body>
 </html>

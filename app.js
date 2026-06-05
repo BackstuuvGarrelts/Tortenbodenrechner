@@ -11,7 +11,7 @@ function uid() {
 }
 
 const defaultState = {
-  activeMode: "cake",
+  activeMode: "home",
   cake: {
     ingredients: {
       flour: 0,
@@ -31,12 +31,35 @@ const defaultState = {
       quark: 0
     },
     runs: 0
+  },
+  bread: {
+    ingredients: {
+      starter: 0,
+      flour: 0,
+      salt: 0,
+      yeast: 0,
+      starterWater: 0,
+      sugar: 0,
+      doughWater: 0,
+      raisins: 0
+    },
+    runs: 0,
+    loafWeight: 0
+  },
+  pudding: {
+    ingredients: {
+      water: 0,
+      powder: 0
+    },
+    targetMass: 0
   }
 };
 
 let state = loadState();
 let cakeLocked = true;
 let quarkLocked = true;
+let breadLocked = true;
+let puddingLocked = true;
 
 const els = {
   pinGate: document.querySelector("#pinGate"),
@@ -44,11 +67,17 @@ const els = {
   pinInput: document.querySelector("#pinInput"),
   pinError: document.querySelector("#pinError"),
   appTitle: document.querySelector("#appTitle"),
-  modeButtons: document.querySelectorAll(".mode-button"),
+  homeButton: document.querySelector("#homeButton"),
+  homeView: document.querySelector("#homeView"),
+  calculatorCards: document.querySelectorAll(".calculator-card"),
   cakeView: document.querySelector("#cakeView"),
   quarkView: document.querySelector("#quarkView"),
+  breadView: document.querySelector("#breadView"),
+  puddingView: document.querySelector("#puddingView"),
   cakeRecipeSection: document.querySelector(".cake-recipe-section"),
   quarkRecipeSection: document.querySelector(".quark-recipe-section"),
+  breadRecipeSection: document.querySelector(".bread-recipe-section"),
+  puddingRecipeSection: document.querySelector(".pudding-recipe-section"),
   flourInput: document.querySelector("#flourInput"),
   eggsInput: document.querySelector("#eggsInput"),
   waterInput: document.querySelector("#waterInput"),
@@ -74,7 +103,41 @@ const els = {
   quarkTotalMass: document.querySelector("#quarkTotalMass"),
   quarkFlourTotal: document.querySelector("#quarkFlourTotal"),
   quarkWaterTotal: document.querySelector("#quarkWaterTotal"),
-  quarkTotal: document.querySelector("#quarkTotal")
+  quarkTotal: document.querySelector("#quarkTotal"),
+  breadStarterInput: document.querySelector("#breadStarterInput"),
+  breadFlourInput: document.querySelector("#breadFlourInput"),
+  breadSaltInput: document.querySelector("#breadSaltInput"),
+  breadYeastInput: document.querySelector("#breadYeastInput"),
+  breadStarterWaterInput: document.querySelector("#breadStarterWaterInput"),
+  breadSugarInput: document.querySelector("#breadSugarInput"),
+  breadDoughWaterInput: document.querySelector("#breadDoughWaterInput"),
+  breadRaisinsInput: document.querySelector("#breadRaisinsInput"),
+  breadBaseTotal: document.querySelector("#breadBaseTotal"),
+  breadLockButton: document.querySelector("#breadLockButton"),
+  breadResetButton: document.querySelector("#breadResetButton"),
+  breadRunsInput: document.querySelector("#breadRunsInput"),
+  breadWeightInput: document.querySelector("#breadWeightInput"),
+  breadRunsLabel: document.querySelector("#breadRunsLabel"),
+  breadTotalMass: document.querySelector("#breadTotalMass"),
+  breadStarterTotal: document.querySelector("#breadStarterTotal"),
+  breadFlourTotal: document.querySelector("#breadFlourTotal"),
+  breadSaltTotal: document.querySelector("#breadSaltTotal"),
+  breadYeastTotal: document.querySelector("#breadYeastTotal"),
+  breadStarterWaterTotal: document.querySelector("#breadStarterWaterTotal"),
+  breadSugarTotal: document.querySelector("#breadSugarTotal"),
+  breadDoughWaterTotal: document.querySelector("#breadDoughWaterTotal"),
+  breadRaisinsTotal: document.querySelector("#breadRaisinsTotal"),
+  puddingWaterInput: document.querySelector("#puddingWaterInput"),
+  puddingPowderInput: document.querySelector("#puddingPowderInput"),
+  puddingBaseTotal: document.querySelector("#puddingBaseTotal"),
+  puddingLockButton: document.querySelector("#puddingLockButton"),
+  puddingResetButton: document.querySelector("#puddingResetButton"),
+  puddingTargetInput: document.querySelector("#puddingTargetInput"),
+  puddingTargetLabel: document.querySelector("#puddingTargetLabel"),
+  puddingTotalMass: document.querySelector("#puddingTotalMass"),
+  puddingWaterTotal: document.querySelector("#puddingWaterTotal"),
+  puddingPowderTotal: document.querySelector("#puddingPowderTotal"),
+  puddingRatioWarning: document.querySelector("#puddingRatioWarning")
 };
 
 function unlockApp() {
@@ -122,7 +185,7 @@ function loadState() {
 function normalizeState(saved) {
   const fallback = cloneDefaultState();
   return {
-    activeMode: saved.activeMode === "quark" ? "quark" : "cake",
+    activeMode: ["home", "cake", "quark", "bread", "pudding"].includes(saved.activeMode) ? saved.activeMode : "home",
     cake: {
       ingredients: {
         flour: toNumber(saved.cake?.ingredients?.flour),
@@ -138,6 +201,27 @@ function normalizeState(saved) {
         quark: toNumber(saved.quark?.ingredients?.quark)
       },
       runs: toNumber(saved.quark?.runs)
+    },
+    bread: {
+      ingredients: {
+        starter: toNumber(saved.bread?.ingredients?.starter),
+        flour: toNumber(saved.bread?.ingredients?.flour),
+        salt: toNumber(saved.bread?.ingredients?.salt),
+        yeast: toNumber(saved.bread?.ingredients?.yeast),
+        starterWater: toNumber(saved.bread?.ingredients?.starterWater),
+        sugar: toNumber(saved.bread?.ingredients?.sugar),
+        doughWater: toNumber(saved.bread?.ingredients?.doughWater),
+        raisins: toNumber(saved.bread?.ingredients?.raisins)
+      },
+      runs: toNumber(saved.bread?.runs),
+      loafWeight: toNumber(saved.bread?.loafWeight)
+    },
+    pudding: {
+      ingredients: {
+        water: toNumber(saved.pudding?.ingredients?.water),
+        powder: toNumber(saved.pudding?.ingredients?.powder)
+      },
+      targetMass: toNumber(saved.pudding?.targetMass)
     }
   };
 }
@@ -175,18 +259,34 @@ function setMode(mode) {
   state.activeMode = mode;
   saveState();
   renderMode();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function renderMode() {
+  const isHome = state.activeMode === "home";
   const isCake = state.activeMode === "cake";
+  const isQuark = state.activeMode === "quark";
+  const isBread = state.activeMode === "bread";
+  const isPudding = state.activeMode === "pudding";
+
+  els.homeView.hidden = !isHome;
   els.cakeView.hidden = !isCake;
-  els.quarkView.hidden = isCake;
-  els.appTitle.textContent = isCake ? "Tortenboden Rechner" : "Quarkbällchen Rechner";
-  els.modeButtons.forEach((button) => {
-    const isActive = button.dataset.mode === state.activeMode;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-current", isActive ? "page" : "false");
-  });
+  els.quarkView.hidden = !isQuark;
+  els.breadView.hidden = !isBread;
+  els.puddingView.hidden = !isPudding;
+  els.homeButton.hidden = isHome;
+
+  if (isCake) {
+    els.appTitle.textContent = "Tortenboden Rechner";
+  } else if (isQuark) {
+    els.appTitle.textContent = "Quarkbällchen Rechner";
+  } else if (isBread) {
+    els.appTitle.textContent = "Rosinenbrot Rechner";
+  } else if (isPudding) {
+    els.appTitle.textContent = "Pudding Rechner";
+  } else {
+    els.appTitle.textContent = "Backrechner";
+  }
 }
 
 function renderCakeIngredients() {
@@ -237,6 +337,56 @@ function renderQuarkLock() {
   els.quarkLockButton.setAttribute("aria-pressed", String(quarkLocked));
 }
 
+function renderBreadIngredients() {
+  els.breadStarterInput.value = state.bread.ingredients.starter || "";
+  els.breadFlourInput.value = state.bread.ingredients.flour || "";
+  els.breadSaltInput.value = state.bread.ingredients.salt || "";
+  els.breadYeastInput.value = state.bread.ingredients.yeast || "";
+  els.breadStarterWaterInput.value = state.bread.ingredients.starterWater || "";
+  els.breadSugarInput.value = state.bread.ingredients.sugar || "";
+  els.breadDoughWaterInput.value = state.bread.ingredients.doughWater || "";
+  els.breadRaisinsInput.value = state.bread.ingredients.raisins || "";
+  els.breadRunsInput.value = state.bread.runs || "";
+  els.breadWeightInput.value = state.bread.loafWeight || "";
+  renderBreadLock();
+}
+
+function renderBreadLock() {
+  [
+    els.breadStarterInput,
+    els.breadFlourInput,
+    els.breadSaltInput,
+    els.breadYeastInput,
+    els.breadStarterWaterInput,
+    els.breadSugarInput,
+    els.breadDoughWaterInput,
+    els.breadRaisinsInput
+  ].forEach((input) => {
+    input.readOnly = breadLocked;
+  });
+  els.breadRecipeSection.classList.toggle("is-locked", breadLocked);
+  els.breadLockButton.classList.toggle("is-editing", !breadLocked);
+  els.breadLockButton.textContent = breadLocked ? "Bearbeiten" : "Sperren";
+  els.breadLockButton.setAttribute("aria-pressed", String(breadLocked));
+}
+
+function renderPuddingIngredients() {
+  els.puddingWaterInput.value = state.pudding.ingredients.water || "";
+  els.puddingPowderInput.value = state.pudding.ingredients.powder || "";
+  els.puddingTargetInput.value = state.pudding.targetMass || "";
+  renderPuddingLock();
+}
+
+function renderPuddingLock() {
+  [els.puddingWaterInput, els.puddingPowderInput].forEach((input) => {
+    input.readOnly = puddingLocked;
+  });
+  els.puddingRecipeSection.classList.toggle("is-locked", puddingLocked);
+  els.puddingLockButton.classList.toggle("is-editing", !puddingLocked);
+  els.puddingLockButton.textContent = puddingLocked ? "Bearbeiten" : "Sperren";
+  els.puddingLockButton.setAttribute("aria-pressed", String(puddingLocked));
+}
+
 function calculateCake() {
   const { flour, eggs, water } = state.cake.ingredients;
   const baseTotal = flour + eggs + water;
@@ -265,9 +415,52 @@ function calculateQuark() {
   els.quarkTotal.textContent = formatGram(quark * runs);
 }
 
+function calculateBread() {
+  const ingredients = state.bread.ingredients;
+  const baseTotal =
+    ingredients.starter +
+    ingredients.flour +
+    ingredients.salt +
+    ingredients.yeast +
+    ingredients.starterWater +
+    ingredients.sugar +
+    ingredients.doughWater +
+    ingredients.raisins;
+  const targetTotal = state.bread.runs * state.bread.loafWeight;
+  const factor = baseTotal > 0 ? targetTotal / baseTotal : 0;
+
+  els.breadBaseTotal.value = `${formatGram(baseTotal)} Masse`;
+  els.breadRunsLabel.value = formatGram(targetTotal);
+  els.breadTotalMass.value = formatGram(targetTotal);
+  els.breadStarterTotal.textContent = formatGram(ingredients.starter * factor);
+  els.breadFlourTotal.textContent = formatGram(ingredients.flour * factor);
+  els.breadSaltTotal.textContent = formatGram(ingredients.salt * factor);
+  els.breadYeastTotal.textContent = formatGram(ingredients.yeast * factor);
+  els.breadStarterWaterTotal.textContent = formatGram(ingredients.starterWater * factor);
+  els.breadSugarTotal.textContent = formatGram(ingredients.sugar * factor);
+  els.breadDoughWaterTotal.textContent = formatGram(ingredients.doughWater * factor);
+  els.breadRaisinsTotal.textContent = formatGram(ingredients.raisins * factor);
+}
+
+function calculatePudding() {
+  const { water, powder } = state.pudding.ingredients;
+  const baseTotal = water + powder;
+  const targetTotal = state.pudding.targetMass;
+  const factor = baseTotal > 0 ? targetTotal / baseTotal : 0;
+
+  els.puddingBaseTotal.value = `${formatGram(baseTotal)} Masse`;
+  els.puddingTargetLabel.value = formatGram(targetTotal);
+  els.puddingTotalMass.value = formatGram(targetTotal);
+  els.puddingWaterTotal.textContent = formatGram(water * factor);
+  els.puddingPowderTotal.textContent = formatGram(powder * factor);
+  els.puddingRatioWarning.hidden = baseTotal > 0 || targetTotal === 0;
+}
+
 function calculateAll() {
   calculateCake();
   calculateQuark();
+  calculateBread();
+  calculatePudding();
 }
 
 function syncCakeIngredient(field, value) {
@@ -280,6 +473,18 @@ function syncQuarkIngredient(field, value) {
   state.quark.ingredients[field] = toNumber(value);
   saveState();
   calculateQuark();
+}
+
+function syncBreadIngredient(field, value) {
+  state.bread.ingredients[field] = toNumber(value);
+  saveState();
+  calculateBread();
+}
+
+function syncPuddingIngredient(field, value) {
+  state.pudding.ingredients[field] = toNumber(value);
+  saveState();
+  calculatePudding();
 }
 
 function updateRing(id, field, value) {
@@ -325,6 +530,22 @@ function resetQuarkBaseRecipe() {
   calculateQuark();
 }
 
+function resetBreadBaseRecipe() {
+  const fresh = cloneDefaultState();
+  state.bread.ingredients = fresh.bread.ingredients;
+  saveState();
+  renderBreadIngredients();
+  calculateBread();
+}
+
+function resetPuddingBaseRecipe() {
+  const fresh = cloneDefaultState();
+  state.pudding.ingredients = fresh.pudding.ingredients;
+  saveState();
+  renderPuddingIngredients();
+  calculatePudding();
+}
+
 function confirmAndResetCakeBaseRecipe() {
   if (!confirm("Grundrezept für Tortenböden wirklich zurücksetzen?")) return;
   resetCakeBaseRecipe();
@@ -335,9 +556,20 @@ function confirmAndResetQuarkBaseRecipe() {
   resetQuarkBaseRecipe();
 }
 
-els.modeButtons.forEach((button) => {
+function confirmAndResetBreadBaseRecipe() {
+  if (!confirm("Grundrezept für Rosinenbrot wirklich zurücksetzen?")) return;
+  resetBreadBaseRecipe();
+}
+
+function confirmAndResetPuddingBaseRecipe() {
+  if (!confirm("Grundrezept für Pudding wirklich zurücksetzen?")) return;
+  resetPuddingBaseRecipe();
+}
+
+els.calculatorCards.forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
 });
+els.homeButton.addEventListener("click", () => setMode("home"));
 
 els.flourInput.addEventListener("input", (event) => syncCakeIngredient("flour", event.target.value));
 els.eggsInput.addEventListener("input", (event) => syncCakeIngredient("eggs", event.target.value));
@@ -350,6 +582,33 @@ els.quarkRunsInput.addEventListener("input", (event) => {
   state.quark.runs = toNumber(event.target.value);
   saveState();
   calculateQuark();
+});
+
+els.breadStarterInput.addEventListener("input", (event) => syncBreadIngredient("starter", event.target.value));
+els.breadFlourInput.addEventListener("input", (event) => syncBreadIngredient("flour", event.target.value));
+els.breadSaltInput.addEventListener("input", (event) => syncBreadIngredient("salt", event.target.value));
+els.breadYeastInput.addEventListener("input", (event) => syncBreadIngredient("yeast", event.target.value));
+els.breadStarterWaterInput.addEventListener("input", (event) => syncBreadIngredient("starterWater", event.target.value));
+els.breadSugarInput.addEventListener("input", (event) => syncBreadIngredient("sugar", event.target.value));
+els.breadDoughWaterInput.addEventListener("input", (event) => syncBreadIngredient("doughWater", event.target.value));
+els.breadRaisinsInput.addEventListener("input", (event) => syncBreadIngredient("raisins", event.target.value));
+els.breadRunsInput.addEventListener("input", (event) => {
+  state.bread.runs = toNumber(event.target.value);
+  saveState();
+  calculateBread();
+});
+els.breadWeightInput.addEventListener("input", (event) => {
+  state.bread.loafWeight = toNumber(event.target.value);
+  saveState();
+  calculateBread();
+});
+
+els.puddingWaterInput.addEventListener("input", (event) => syncPuddingIngredient("water", event.target.value));
+els.puddingPowderInput.addEventListener("input", (event) => syncPuddingIngredient("powder", event.target.value));
+els.puddingTargetInput.addEventListener("input", (event) => {
+  state.pudding.targetMass = toNumber(event.target.value);
+  saveState();
+  calculatePudding();
 });
 
 els.ringList.addEventListener("input", (event) => {
@@ -367,6 +626,8 @@ els.ringList.addEventListener("click", (event) => {
 els.addRingButton.addEventListener("click", addRing);
 els.cakeResetButton.addEventListener("click", confirmAndResetCakeBaseRecipe);
 els.quarkResetButton.addEventListener("click", confirmAndResetQuarkBaseRecipe);
+els.breadResetButton.addEventListener("click", confirmAndResetBreadBaseRecipe);
+els.puddingResetButton.addEventListener("click", confirmAndResetPuddingBaseRecipe);
 els.cakeLockButton.addEventListener("click", () => {
   cakeLocked = !cakeLocked;
   renderCakeLock();
@@ -374,6 +635,14 @@ els.cakeLockButton.addEventListener("click", () => {
 els.quarkLockButton.addEventListener("click", () => {
   quarkLocked = !quarkLocked;
   renderQuarkLock();
+});
+els.breadLockButton.addEventListener("click", () => {
+  breadLocked = !breadLocked;
+  renderBreadLock();
+});
+els.puddingLockButton.addEventListener("click", () => {
+  puddingLocked = !puddingLocked;
+  renderPuddingLock();
 });
 els.pinForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -396,5 +665,7 @@ renderMode();
 renderCakeIngredients();
 renderRings();
 renderQuarkIngredients();
+renderBreadIngredients();
+renderPuddingIngredients();
 calculateAll();
 lockAppIfNeeded();
