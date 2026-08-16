@@ -1,5 +1,6 @@
 const STORAGE_KEY = "backrechner:v2";
 const LEGACY_STORAGE_KEY = "tortenboden-rechner:v1";
+const INVENTORY_STORAGE_KEY = "backrechner:inventory:v1";
 const ACCESS_PIN = "6276";
 const UNLOCK_KEY = "tortenboden-rechner:unlocked";
 
@@ -55,7 +56,52 @@ const defaultState = {
   }
 };
 
+const defaultInventory = [
+  {
+    id: uid(),
+    qrCode: "00050",
+    name: "Salz",
+    container: "Bottich 12",
+    filledAt: "2026-08-16",
+    bestBefore: "2027-08-16",
+    shelfLifeDays: 365
+  },
+  {
+    id: uid(),
+    qrCode: "00051",
+    name: "Weizenmehl Type 550",
+    container: "Bottich 03",
+    filledAt: "2026-08-12",
+    bestBefore: "2026-11-10",
+    shelfLifeDays: 90
+  },
+  {
+    id: uid(),
+    qrCode: "00052",
+    name: "Frischhefe",
+    container: "Kühlfach 02",
+    filledAt: "2026-08-15",
+    bestBefore: "2026-08-29",
+    shelfLifeDays: 14
+  },
+  {
+    id: uid(),
+    qrCode: "00053",
+    name: "Roggensauer Starter",
+    container: "Eimer 07",
+    filledAt: "2026-08-16",
+    bestBefore: "2026-08-19",
+    shelfLifeDays: 3
+  }
+];
+
 let state = loadState();
+let inventory = loadInventory();
+let inventoryView = "home";
+let activeInventoryStatus = "ok";
+let selectedInventoryCode = "00050";
+let inventoryStream = null;
+let inventoryScanTimer = null;
 let cakeLocked = true;
 let quarkLocked = true;
 let breadLocked = true;
@@ -74,6 +120,41 @@ const els = {
   quarkView: document.querySelector("#quarkView"),
   breadView: document.querySelector("#breadView"),
   puddingView: document.querySelector("#puddingView"),
+  inventoryView: document.querySelector("#inventoryView"),
+  inventoryDashboard: document.querySelector("#inventoryDashboard"),
+  inventoryScanPanel: document.querySelector("#inventoryScanPanel"),
+  inventoryDetailPanel: document.querySelector("#inventoryDetailPanel"),
+  inventoryListPanel: document.querySelector("#inventoryListPanel"),
+  inventoryCreatePanel: document.querySelector("#inventoryCreatePanel"),
+  inventoryOkCount: document.querySelector("#inventoryOkCount"),
+  inventorySoonCount: document.querySelector("#inventorySoonCount"),
+  inventoryExpiredCount: document.querySelector("#inventoryExpiredCount"),
+  inventoryStatusCards: document.querySelectorAll("[data-inventory-status]"),
+  inventoryActionButtons: document.querySelectorAll("[data-inventory-action]"),
+  inventoryBackButtons: document.querySelectorAll(".inventory-back"),
+  inventoryVideo: document.querySelector("#inventoryVideo"),
+  inventoryCameraPlaceholder: document.querySelector("#inventoryCameraPlaceholder"),
+  inventoryScanMessage: document.querySelector("#inventoryScanMessage"),
+  inventoryCameraButton: document.querySelector("#inventoryCameraButton"),
+  inventoryManualCode: document.querySelector("#inventoryManualCode"),
+  inventoryManualButton: document.querySelector("#inventoryManualButton"),
+  inventoryDetailCard: document.querySelector("#inventoryDetailCard"),
+  inventoryDetailQr: document.querySelector("#inventoryDetailQr"),
+  inventoryDetailName: document.querySelector("#inventoryDetailName"),
+  inventoryDetailContainer: document.querySelector("#inventoryDetailContainer"),
+  inventoryDetailFilled: document.querySelector("#inventoryDetailFilled"),
+  inventoryDetailBestBefore: document.querySelector("#inventoryDetailBestBefore"),
+  inventoryDetailStatus: document.querySelector("#inventoryDetailStatus"),
+  inventoryBestBeforeInput: document.querySelector("#inventoryBestBeforeInput"),
+  inventoryRefillButton: document.querySelector("#inventoryRefillButton"),
+  inventoryScanAgainButton: document.querySelector("#inventoryScanAgainButton"),
+  inventoryListTitle: document.querySelector("#inventoryListTitle"),
+  inventoryListCount: document.querySelector("#inventoryListCount"),
+  inventoryList: document.querySelector("#inventoryList"),
+  inventoryNewQr: document.querySelector("#inventoryNewQr"),
+  inventoryNewName: document.querySelector("#inventoryNewName"),
+  inventoryNewContainer: document.querySelector("#inventoryNewContainer"),
+  inventoryCreateButton: document.querySelector("#inventoryCreateButton"),
   cakeRecipeSection: document.querySelector(".cake-recipe-section"),
   quarkRecipeSection: document.querySelector(".quark-recipe-section"),
   breadRecipeSection: document.querySelector(".bread-recipe-section"),
@@ -185,7 +266,7 @@ function loadState() {
 function normalizeState(saved) {
   const fallback = cloneDefaultState();
   return {
-    activeMode: ["home", "cake", "quark", "bread", "pudding"].includes(saved.activeMode) ? saved.activeMode : "home",
+    activeMode: ["home", "cake", "quark", "bread", "pudding", "inventory"].includes(saved.activeMode) ? saved.activeMode : "home",
     cake: {
       ingredients: {
         flour: toNumber(saved.cake?.ingredients?.flour),
@@ -245,6 +326,35 @@ function saveState() {
   } catch {}
 }
 
+function loadInventory() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(INVENTORY_STORAGE_KEY));
+    if (Array.isArray(saved) && saved.length) {
+      return saved.map(normalizeInventoryItem);
+    }
+  } catch {}
+
+  return defaultInventory.map(normalizeInventoryItem);
+}
+
+function normalizeInventoryItem(item) {
+  return {
+    id: item.id || uid(),
+    qrCode: normalizeQrCode(item.qrCode || ""),
+    name: String(item.name || "Zutat"),
+    container: String(item.container || "Bottich"),
+    filledAt: String(item.filledAt || isoDate(new Date())),
+    bestBefore: String(item.bestBefore || isoDate(addDays(new Date(), 30))),
+    shelfLifeDays: toNumber(item.shelfLifeDays) || 30
+  };
+}
+
+function saveInventory() {
+  try {
+    localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(inventory));
+  } catch {}
+}
+
 function toNumber(value) {
   const normalized = Number(String(value ?? "").trim().replace(",", "."));
   return Number.isFinite(normalized) && normalized > 0 ? normalized : 0;
@@ -253,6 +363,56 @@ function toNumber(value) {
 function formatGram(value) {
   const rounded = Math.round(value * 10) / 10;
   return `${rounded.toLocaleString("de-DE", { maximumFractionDigits: 1 })} g`;
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function isoDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function formatDate(value) {
+  return new Intl.DateTimeFormat("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }).format(new Date(`${value}T12:00:00`));
+}
+
+function daysUntil(value) {
+  const today = new Date();
+  const target = new Date(`${value}T12:00:00`);
+  today.setHours(12, 0, 0, 0);
+  return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+}
+
+function getInventoryStatus(item) {
+  const remaining = daysUntil(item.bestBefore);
+  if (remaining < 0) return "expired";
+  if (remaining <= 7) return "soon";
+  return "ok";
+}
+
+function inventoryStatusText(status, item) {
+  const remaining = daysUntil(item.bestBefore);
+  if (status === "expired") return `abgelaufen seit ${Math.abs(remaining)} Tagen`;
+  if (status === "soon") return remaining === 0 ? "heute fällig" : `noch ${remaining} Tage`;
+  return `${remaining} Tage haltbar`;
+}
+
+function inventoryStatusTitle(status) {
+  if (status === "ok") return "In Ordnung";
+  if (status === "soon") return "Bald fällig";
+  return "Abgelaufen";
+}
+
+function normalizeQrCode(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits ? digits.padStart(5, "0").slice(-5) : "";
 }
 
 function setMode(mode) {
@@ -268,12 +428,14 @@ function renderMode() {
   const isQuark = state.activeMode === "quark";
   const isBread = state.activeMode === "bread";
   const isPudding = state.activeMode === "pudding";
+  const isInventory = state.activeMode === "inventory";
 
   els.homeView.hidden = !isHome;
   els.cakeView.hidden = !isCake;
   els.quarkView.hidden = !isQuark;
   els.breadView.hidden = !isBread;
   els.puddingView.hidden = !isPudding;
+  els.inventoryView.hidden = !isInventory;
   els.homeButton.hidden = isHome;
 
   if (isCake) {
@@ -284,6 +446,9 @@ function renderMode() {
     els.appTitle.textContent = "Rosinenbrot Rechner";
   } else if (isPudding) {
     els.appTitle.textContent = "Pudding Rechner";
+  } else if (isInventory) {
+    els.appTitle.textContent = "Lagerverwaltung";
+    renderInventory();
   } else {
     els.appTitle.textContent = "Backrechner";
   }
@@ -456,6 +621,198 @@ function calculatePudding() {
   els.puddingRatioWarning.hidden = baseTotal > 0 || targetTotal === 0;
 }
 
+function setInventoryView(view) {
+  inventoryView = view;
+  renderInventory();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderInventory() {
+  if (!els.inventoryView) return;
+  const isHome = inventoryView === "home";
+  const isScan = inventoryView === "scan";
+  const isDetail = inventoryView === "detail";
+  const isList = inventoryView === "list";
+  const isCreate = inventoryView === "create";
+
+  els.inventoryDashboard.hidden = !isHome;
+  els.inventoryScanPanel.hidden = !isScan;
+  els.inventoryDetailPanel.hidden = !isDetail;
+  els.inventoryListPanel.hidden = !isList;
+  els.inventoryCreatePanel.hidden = !isCreate;
+
+  renderInventoryCounts();
+  if (isDetail) renderInventoryDetail();
+  if (isList) renderInventoryList();
+}
+
+function renderInventoryCounts() {
+  const counts = inventory.reduce(
+    (result, item) => {
+      result[getInventoryStatus(item)] += 1;
+      return result;
+    },
+    { ok: 0, soon: 0, expired: 0 }
+  );
+
+  els.inventoryOkCount.textContent = counts.ok;
+  els.inventorySoonCount.textContent = counts.soon;
+  els.inventoryExpiredCount.textContent = counts.expired;
+}
+
+function renderInventoryDetail() {
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode) || inventory[0];
+  if (!item) return;
+  const status = getInventoryStatus(item);
+  selectedInventoryCode = item.qrCode;
+  els.inventoryDetailCard.className = `inventory-detail-card ${status}`;
+  els.inventoryDetailQr.textContent = `QR ${item.qrCode}`;
+  els.inventoryDetailName.textContent = item.name;
+  els.inventoryDetailContainer.textContent = item.container;
+  els.inventoryDetailFilled.textContent = formatDate(item.filledAt);
+  els.inventoryDetailBestBefore.textContent = formatDate(item.bestBefore);
+  els.inventoryDetailStatus.textContent = inventoryStatusText(status, item);
+  els.inventoryBestBeforeInput.value = item.bestBefore;
+}
+
+function renderInventoryList() {
+  const items = inventory.filter((item) => getInventoryStatus(item) === activeInventoryStatus);
+  els.inventoryListTitle.textContent = inventoryStatusTitle(activeInventoryStatus);
+  els.inventoryListCount.textContent = `${items.length} Einträge`;
+  els.inventoryList.innerHTML = "";
+
+  if (!items.length) {
+    const empty = document.createElement("div");
+    empty.className = "inventory-empty";
+    empty.textContent = "Keine Zutaten in diesem Bereich.";
+    els.inventoryList.append(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const status = getInventoryStatus(item);
+    const button = document.createElement("button");
+    button.className = `inventory-row ${status}`;
+    button.type = "button";
+    button.dataset.qrCode = item.qrCode;
+    const text = document.createElement("span");
+    const name = document.createElement("strong");
+    const meta = document.createElement("small");
+    const statusText = document.createElement("em");
+    name.textContent = item.name;
+    meta.textContent = `QR ${item.qrCode} · ${item.container}`;
+    statusText.textContent = inventoryStatusText(status, item);
+    text.append(name, meta);
+    button.append(text, statusText);
+    els.inventoryList.append(button);
+  });
+}
+
+function applyInventoryCode(value) {
+  const qrCode = normalizeQrCode(value);
+  if (!qrCode) return;
+  const item = inventory.find((entry) => entry.qrCode === qrCode);
+  selectedInventoryCode = qrCode;
+  els.inventoryManualCode.value = qrCode;
+  stopInventoryCamera();
+
+  if (item) {
+    els.inventoryScanMessage.textContent = `${item.name} gefunden`;
+    setInventoryView("detail");
+    return;
+  }
+
+  els.inventoryScanMessage.textContent = `QR ${qrCode} ist noch frei`;
+  els.inventoryNewQr.value = qrCode;
+  setInventoryView("create");
+}
+
+async function startInventoryCamera() {
+  els.inventoryScanMessage.textContent = "Kamera wird geöffnet ...";
+  try {
+    inventoryStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    });
+    els.inventoryVideo.srcObject = inventoryStream;
+    els.inventoryVideo.hidden = false;
+    els.inventoryCameraPlaceholder.hidden = true;
+    await els.inventoryVideo.play();
+    els.inventoryCameraButton.textContent = "Kamera stoppen";
+
+    if (!("BarcodeDetector" in window)) {
+      els.inventoryScanMessage.textContent = "QR-Erkennung nicht verfügbar. Code unten eintippen.";
+      return;
+    }
+
+    const detector = new BarcodeDetector({ formats: ["qr_code"] });
+    inventoryScanTimer = setInterval(async () => {
+      const results = await detector.detect(els.inventoryVideo);
+      const code = results[0]?.rawValue;
+      if (code) applyInventoryCode(code);
+    }, 700);
+    els.inventoryScanMessage.textContent = "QR-Code vor die Kamera halten";
+  } catch {
+    els.inventoryScanMessage.textContent = "Kamera konnte nicht geöffnet werden. Code manuell eingeben.";
+    stopInventoryCamera();
+  }
+}
+
+function stopInventoryCamera() {
+  if (inventoryScanTimer) {
+    clearInterval(inventoryScanTimer);
+    inventoryScanTimer = null;
+  }
+  if (inventoryStream) {
+    inventoryStream.getTracks().forEach((track) => track.stop());
+    inventoryStream = null;
+  }
+  els.inventoryVideo.hidden = true;
+  els.inventoryCameraPlaceholder.hidden = false;
+  els.inventoryCameraButton.textContent = "Kamera starten";
+}
+
+function refillInventoryItem() {
+  const today = new Date();
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode);
+  if (!item) return;
+  item.filledAt = isoDate(today);
+  item.bestBefore = isoDate(addDays(today, item.shelfLifeDays));
+  saveInventory();
+  renderInventory();
+}
+
+function updateInventoryBestBefore(value) {
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode);
+  if (!item) return;
+  item.bestBefore = value;
+  saveInventory();
+  renderInventory();
+}
+
+function createInventoryItem() {
+  const qrCode = normalizeQrCode(els.inventoryNewQr.value);
+  const name = els.inventoryNewName.value.trim();
+  if (!qrCode || !name || inventory.some((item) => item.qrCode === qrCode)) return;
+
+  const today = new Date();
+  const item = {
+    id: uid(),
+    qrCode,
+    name,
+    container: els.inventoryNewContainer.value.trim() || "Neuer Bottich",
+    filledAt: isoDate(today),
+    bestBefore: isoDate(addDays(today, 30)),
+    shelfLifeDays: 30
+  };
+  inventory.unshift(item);
+  selectedInventoryCode = qrCode;
+  els.inventoryNewQr.value = "";
+  els.inventoryNewName.value = "";
+  els.inventoryNewContainer.value = "";
+  saveInventory();
+  setInventoryView("detail");
+}
+
 function calculateAll() {
   calculateCake();
   calculateQuark();
@@ -569,7 +926,60 @@ function confirmAndResetPuddingBaseRecipe() {
 els.calculatorCards.forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
 });
-els.homeButton.addEventListener("click", () => setMode("home"));
+els.homeButton.addEventListener("click", () => {
+  stopInventoryCamera();
+  inventoryView = "home";
+  setMode("home");
+});
+
+els.inventoryStatusCards.forEach((button) => {
+  button.addEventListener("click", () => {
+    activeInventoryStatus = button.dataset.inventoryStatus;
+    setInventoryView("list");
+  });
+});
+
+els.inventoryActionButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const action = button.dataset.inventoryAction;
+    if (action === "scan") setInventoryView("scan");
+    if (action === "list") {
+      activeInventoryStatus = "ok";
+      setInventoryView("list");
+    }
+    if (action === "create") setInventoryView("create");
+  });
+});
+
+els.inventoryBackButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    stopInventoryCamera();
+    setInventoryView("home");
+  });
+});
+
+els.inventoryCameraButton.addEventListener("click", () => {
+  if (inventoryStream) {
+    stopInventoryCamera();
+    return;
+  }
+  startInventoryCamera();
+});
+
+els.inventoryManualButton.addEventListener("click", () => applyInventoryCode(els.inventoryManualCode.value));
+els.inventoryManualCode.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") applyInventoryCode(els.inventoryManualCode.value);
+});
+els.inventoryList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-qr-code]");
+  if (!button) return;
+  selectedInventoryCode = button.dataset.qrCode;
+  setInventoryView("detail");
+});
+els.inventoryRefillButton.addEventListener("click", refillInventoryItem);
+els.inventoryBestBeforeInput.addEventListener("change", (event) => updateInventoryBestBefore(event.target.value));
+els.inventoryScanAgainButton.addEventListener("click", () => setInventoryView("scan"));
+els.inventoryCreateButton.addEventListener("click", createInventoryItem);
 
 els.flourInput.addEventListener("input", (event) => syncCakeIngredient("flour", event.target.value));
 els.eggsInput.addEventListener("input", (event) => syncCakeIngredient("eggs", event.target.value));

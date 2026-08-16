@@ -135,6 +135,12 @@ h2 {
   margin-top: 14px;
 }
 
+.inventory-menu {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
 .calculator-card {
   display: grid;
   gap: 8px;
@@ -397,14 +403,196 @@ input:focus {
   font-weight: 700;
 }
 
+.inventory-status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.inventory-status-card {
+  min-height: 92px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  text-align: left;
+}
+
+.inventory-status-card strong {
+  color: var(--accent-dark);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.inventory-status-card span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.inventory-status-card.ok {
+  border-left: 7px solid #2f7a4f;
+}
+
+.inventory-status-card.soon {
+  border-left: 7px solid #c17a16;
+}
+
+.inventory-status-card.expired {
+  border-left: 7px solid #b84332;
+}
+
+.inventory-panel[hidden] {
+  display: none;
+}
+
+.camera-box {
+  aspect-ratio: 4 / 3;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: #241c18;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+}
+
+.camera-box video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-placeholder {
+  color: #fffaf5;
+  font-weight: 800;
+}
+
+.inventory-message {
+  color: var(--muted);
+  font-weight: 700;
+  margin: 12px 0;
+}
+
+.manual-scan-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 12px;
+}
+
+.inventory-detail-card {
+  border: 1px solid var(--line);
+  border-left: 7px solid #2f7a4f;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.inventory-detail-card.soon {
+  border-left-color: #c17a16;
+}
+
+.inventory-detail-card.expired {
+  border-left-color: #b84332;
+}
+
+.inventory-detail-card h2 {
+  font-size: clamp(1.65rem, 7vw, 2.3rem);
+  margin-top: 12px;
+}
+
+.inventory-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.inventory-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.inventory-list {
+  display: grid;
+  gap: 10px;
+}
+
+.inventory-row {
+  width: 100%;
+  min-height: 74px;
+  border: 1px solid var(--line);
+  border-left: 7px solid #2f7a4f;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  text-align: left;
+}
+
+.inventory-row.soon {
+  border-left-color: #c17a16;
+}
+
+.inventory-row.expired {
+  border-left-color: #b84332;
+}
+
+.inventory-row span {
+  display: grid;
+  gap: 4px;
+}
+
+.inventory-row small,
+.inventory-row em {
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.inventory-empty {
+  min-height: 88px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  text-align: center;
+}
+
+.inventory-back {
+  margin-top: 12px;
+}
+
 @media (max-width: 560px) {
   .ingredient-grid,
   .summary-grid,
   .bread-ingredient-grid,
   .bread-summary-grid,
   .pudding-ingredient-grid,
-  .pudding-summary-grid {
+  .pudding-summary-grid,
+  .inventory-status-grid,
+  .inventory-facts,
+  .manual-scan-row {
     grid-template-columns: 1fr;
+  }
+
+  .inventory-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .ring-row {

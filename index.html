@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f7f0e8">
   <title>Backrechner</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=10">
+  <link rel="stylesheet" href="./styles.css?v=11">
 </head>
 <body>
   <section class="pin-gate" id="pinGate" aria-labelledby="pinTitle">
@@ -51,6 +51,10 @@
         <button class="calculator-card" data-mode="pudding" type="button">
           <span>Puddingrechner</span>
           <small>Wasser und Puddingpulver berechnen</small>
+        </button>
+        <button class="calculator-card" data-mode="inventory" type="button">
+          <span>Lagerverwaltung</span>
+          <small>QR-Bottiche, Haltbarkeit und Neubefüllung</small>
         </button>
       </div>
     </section>
@@ -347,6 +351,127 @@
         <button class="danger-button" id="puddingResetButton" type="button">Grundrezept zurücksetzen</button>
       </section>
     </div>
+
+    <div class="recipe-view" id="inventoryView" hidden>
+      <section class="section inventory-dashboard" id="inventoryDashboard" aria-labelledby="inventoryTitle">
+        <div class="section-heading">
+          <h2 id="inventoryTitle">Lagerstatus</h2>
+        </div>
+        <div class="inventory-status-grid">
+          <button class="inventory-status-card ok" data-inventory-status="ok" type="button">
+            <strong id="inventoryOkCount">0</strong>
+            <span>in Ordnung</span>
+          </button>
+          <button class="inventory-status-card soon" data-inventory-status="soon" type="button">
+            <strong id="inventorySoonCount">0</strong>
+            <span>bald fällig</span>
+          </button>
+          <button class="inventory-status-card expired" data-inventory-status="expired" type="button">
+            <strong id="inventoryExpiredCount">0</strong>
+            <span>abgelaufen</span>
+          </button>
+        </div>
+
+        <div class="inventory-menu">
+          <button class="calculator-card" data-inventory-action="scan" type="button">
+            <span>Scannen</span>
+            <small>QR-Code mit Kamera oder per Eingabe öffnen</small>
+          </button>
+          <button class="calculator-card" data-inventory-action="list" type="button">
+            <span>Bestand</span>
+            <small>Alle Zutaten und Bottiche ansehen</small>
+          </button>
+          <button class="calculator-card" data-inventory-action="create" type="button">
+            <span>Neuer QR-Code</span>
+            <small>Neue Zutat oder neuen Bottich anlegen</small>
+          </button>
+        </div>
+      </section>
+
+      <section class="section inventory-panel" id="inventoryScanPanel" hidden aria-labelledby="inventoryScanTitle">
+        <div class="section-heading">
+          <h2 id="inventoryScanTitle">QR-Code scannen</h2>
+        </div>
+        <div class="camera-box">
+          <video id="inventoryVideo" muted playsinline hidden></video>
+          <div id="inventoryCameraPlaceholder" class="camera-placeholder">Scan starten</div>
+        </div>
+        <p id="inventoryScanMessage" class="inventory-message">Bereit zum Scannen</p>
+        <button class="text-button" id="inventoryCameraButton" type="button">Kamera starten</button>
+        <div class="manual-scan-row">
+          <label class="field">
+            <span>QR-Code</span>
+            <input id="inventoryManualCode" inputmode="numeric" type="text" placeholder="00050">
+          </label>
+          <button class="text-button" id="inventoryManualButton" type="button">Suchen</button>
+        </div>
+        <button class="back-button inventory-back" type="button">Zurück</button>
+      </section>
+
+      <section class="section inventory-panel" id="inventoryDetailPanel" hidden aria-labelledby="inventoryDetailName">
+        <div class="inventory-detail-card" id="inventoryDetailCard">
+          <span class="pill" id="inventoryDetailQr">QR 00000</span>
+          <h2 id="inventoryDetailName">Zutat</h2>
+          <p id="inventoryDetailContainer" class="inventory-message">Bottich</p>
+          <div class="inventory-facts">
+            <div class="summary-item">
+              <span>Aufgefüllt</span>
+              <strong id="inventoryDetailFilled">-</strong>
+            </div>
+            <div class="summary-item">
+              <span>Haltbar bis</span>
+              <strong id="inventoryDetailBestBefore">-</strong>
+            </div>
+            <div class="summary-item">
+              <span>Status</span>
+              <strong id="inventoryDetailStatus">-</strong>
+            </div>
+          </div>
+          <div class="manual-scan-row">
+            <button class="text-button" id="inventoryRefillButton" type="button">Neu befüllt</button>
+            <label class="field">
+              <span>Haltbar bis</span>
+              <input id="inventoryBestBeforeInput" type="date">
+            </label>
+          </div>
+        </div>
+        <div class="inventory-detail-actions">
+          <button class="back-button" id="inventoryScanAgainButton" type="button">Weiter scannen</button>
+          <button class="back-button inventory-back" type="button">Zurück</button>
+        </div>
+      </section>
+
+      <section class="section inventory-panel" id="inventoryListPanel" hidden aria-labelledby="inventoryListTitle">
+        <div class="section-heading">
+          <h2 id="inventoryListTitle">Bestand</h2>
+          <span class="pill" id="inventoryListCount">0 Einträge</span>
+        </div>
+        <div id="inventoryList" class="inventory-list"></div>
+        <button class="back-button inventory-back" type="button">Zurück</button>
+      </section>
+
+      <section class="section inventory-panel" id="inventoryCreatePanel" hidden aria-labelledby="inventoryCreateTitle">
+        <div class="section-heading">
+          <h2 id="inventoryCreateTitle">Neuer QR-Code</h2>
+        </div>
+        <div class="ingredient-grid">
+          <label class="field">
+            <span>QR-Code</span>
+            <input id="inventoryNewQr" inputmode="numeric" type="text" placeholder="00054">
+          </label>
+          <label class="field">
+            <span>Zutat</span>
+            <input id="inventoryNewName" type="text" placeholder="Salz">
+          </label>
+          <label class="field">
+            <span>Bottich</span>
+            <input id="inventoryNewContainer" type="text" placeholder="Bottich 12">
+          </label>
+        </div>
+        <button class="text-button" id="inventoryCreateButton" type="button">Anlegen</button>
+        <button class="back-button inventory-back" type="button">Zurück</button>
+      </section>
+    </div>
   </main>
 
   <template id="ringTemplate">
@@ -367,6 +492,6 @@
     </article>
   </template>
 
-  <script src="./app.js?v=10"></script>
+  <script src="./app.js?v=11"></script>
 </body>
 </html>
