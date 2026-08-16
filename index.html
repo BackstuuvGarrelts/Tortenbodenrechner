@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f7f0e8">
   <title>Backrechner</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=12">
+  <link rel="stylesheet" href="./styles.css?v=13">
 </head>
 <body>
   <section class="pin-gate" id="pinGate" aria-labelledby="pinTitle">
@@ -434,6 +434,18 @@
               <input id="inventoryBestBeforeInput" type="date">
             </label>
           </div>
+          <div class="inventory-photo-panel">
+            <div class="section-heading">
+              <h2>Chargenfotos</h2>
+              <label class="text-button file-button">
+                Foto aufnehmen
+                <input id="inventoryPhotoInput" type="file" accept="image/*" capture="environment">
+              </label>
+            </div>
+            <p class="inventory-message">Fotos bleiben als Protokoll bei dieser Zutat gespeichert, bis du sie löschst.</p>
+            <div id="inventoryPhotoList" class="inventory-photo-list"></div>
+            <button class="danger-button" id="inventoryClearPhotosButton" type="button">Fotoprotokoll löschen</button>
+          </div>
         </div>
         <div class="inventory-detail-actions">
           <button class="back-button" id="inventoryScanAgainButton" type="button">Weiter scannen</button>
@@ -492,6 +504,6 @@
     </article>
   </template>
 
-  <script src="./app.js?v=12"></script>
+  <script src="./app.js?v=13"></script>
 </body>
 </html>

@@ -64,7 +64,8 @@ const defaultInventory = [
     container: "Bottich 12",
     filledAt: "2026-08-16",
     bestBefore: "2027-08-16",
-    shelfLifeDays: 365
+    shelfLifeDays: 365,
+    photos: []
   },
   {
     id: uid(),
@@ -73,7 +74,8 @@ const defaultInventory = [
     container: "Bottich 03",
     filledAt: "2026-08-12",
     bestBefore: "2026-11-10",
-    shelfLifeDays: 90
+    shelfLifeDays: 90,
+    photos: []
   },
   {
     id: uid(),
@@ -82,7 +84,8 @@ const defaultInventory = [
     container: "Kühlfach 02",
     filledAt: "2026-08-15",
     bestBefore: "2026-08-29",
-    shelfLifeDays: 14
+    shelfLifeDays: 14,
+    photos: []
   },
   {
     id: uid(),
@@ -91,7 +94,8 @@ const defaultInventory = [
     container: "Eimer 07",
     filledAt: "2026-08-16",
     bestBefore: "2026-08-19",
-    shelfLifeDays: 3
+    shelfLifeDays: 3,
+    photos: []
   }
 ];
 
@@ -147,6 +151,9 @@ const els = {
   inventoryDetailStatus: document.querySelector("#inventoryDetailStatus"),
   inventoryBestBeforeInput: document.querySelector("#inventoryBestBeforeInput"),
   inventoryRefillButton: document.querySelector("#inventoryRefillButton"),
+  inventoryPhotoInput: document.querySelector("#inventoryPhotoInput"),
+  inventoryPhotoList: document.querySelector("#inventoryPhotoList"),
+  inventoryClearPhotosButton: document.querySelector("#inventoryClearPhotosButton"),
   inventoryScanAgainButton: document.querySelector("#inventoryScanAgainButton"),
   inventoryListTitle: document.querySelector("#inventoryListTitle"),
   inventoryListCount: document.querySelector("#inventoryListCount"),
@@ -345,7 +352,17 @@ function normalizeInventoryItem(item) {
     container: String(item.container || "Bottich"),
     filledAt: String(item.filledAt || isoDate(new Date())),
     bestBefore: String(item.bestBefore || isoDate(addDays(new Date(), 30))),
-    shelfLifeDays: toNumber(item.shelfLifeDays) || 30
+    shelfLifeDays: toNumber(item.shelfLifeDays) || 30,
+    photos: Array.isArray(item.photos) ? item.photos.map(normalizeInventoryPhoto).filter(Boolean) : []
+  };
+}
+
+function normalizeInventoryPhoto(photo) {
+  if (!photo?.dataUrl) return null;
+  return {
+    id: photo.id || uid(),
+    createdAt: String(photo.createdAt || new Date().toISOString()),
+    dataUrl: String(photo.dataUrl)
   };
 }
 
@@ -673,6 +690,46 @@ function renderInventoryDetail() {
   els.inventoryDetailBestBefore.textContent = formatDate(item.bestBefore);
   els.inventoryDetailStatus.textContent = inventoryStatusText(status, item);
   els.inventoryBestBeforeInput.value = item.bestBefore;
+  renderInventoryPhotos(item);
+}
+
+function renderInventoryPhotos(item) {
+  els.inventoryPhotoList.innerHTML = "";
+  els.inventoryClearPhotosButton.hidden = item.photos.length === 0;
+
+  if (!item.photos.length) {
+    const empty = document.createElement("div");
+    empty.className = "inventory-empty";
+    empty.textContent = "Noch kein Chargenfoto gespeichert.";
+    els.inventoryPhotoList.append(empty);
+    return;
+  }
+
+  item.photos.forEach((photo) => {
+    const card = document.createElement("article");
+    const image = document.createElement("img");
+    const meta = document.createElement("div");
+    const date = document.createElement("span");
+    const remove = document.createElement("button");
+
+    card.className = "inventory-photo-card";
+    image.src = photo.dataUrl;
+    image.alt = "Chargenfoto";
+    date.textContent = new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date(photo.createdAt));
+    remove.type = "button";
+    remove.className = "back-button";
+    remove.dataset.photoId = photo.id;
+    remove.textContent = "Löschen";
+    meta.append(date, remove);
+    card.append(image, meta);
+    els.inventoryPhotoList.append(card);
+  });
 }
 
 function renderInventoryList() {
@@ -789,6 +846,67 @@ function updateInventoryBestBefore(value) {
   renderInventory();
 }
 
+function readImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result)));
+    reader.addEventListener("error", reject);
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener("load", () => resolve(image));
+    image.addEventListener("error", reject);
+    image.src = dataUrl;
+  });
+}
+
+async function resizePhoto(file) {
+  const dataUrl = await readImageFile(file);
+  const image = await loadImage(dataUrl);
+  const maxSize = 1280;
+  const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
+  const context = canvas.getContext("2d");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.82);
+}
+
+async function addInventoryPhoto(file) {
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode);
+  if (!item || !file) return;
+  const dataUrl = await resizePhoto(file);
+  item.photos.unshift({
+    id: uid(),
+    createdAt: new Date().toISOString(),
+    dataUrl
+  });
+  saveInventory();
+  renderInventory();
+}
+
+function removeInventoryPhoto(photoId) {
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode);
+  if (!item) return;
+  item.photos = item.photos.filter((photo) => photo.id !== photoId);
+  saveInventory();
+  renderInventory();
+}
+
+function clearInventoryPhotos() {
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode);
+  if (!item || !item.photos.length) return;
+  if (!confirm("Fotoprotokoll für diese Zutat löschen?")) return;
+  item.photos = [];
+  saveInventory();
+  renderInventory();
+}
+
 function createInventoryItem() {
   const qrCode = normalizeQrCode(els.inventoryNewQr.value);
   const name = els.inventoryNewName.value.trim();
@@ -802,7 +920,8 @@ function createInventoryItem() {
     container: els.inventoryNewContainer.value.trim() || "Neuer Bottich",
     filledAt: isoDate(today),
     bestBefore: isoDate(addDays(today, 30)),
-    shelfLifeDays: 30
+    shelfLifeDays: 30,
+    photos: []
   };
   inventory.unshift(item);
   selectedInventoryCode = qrCode;
@@ -978,6 +1097,17 @@ els.inventoryList.addEventListener("click", (event) => {
 });
 els.inventoryRefillButton.addEventListener("click", refillInventoryItem);
 els.inventoryBestBeforeInput.addEventListener("change", (event) => updateInventoryBestBefore(event.target.value));
+els.inventoryPhotoInput.addEventListener("change", async (event) => {
+  const file = event.target.files?.[0];
+  await addInventoryPhoto(file);
+  event.target.value = "";
+});
+els.inventoryPhotoList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-photo-id]");
+  if (!button) return;
+  removeInventoryPhoto(button.dataset.photoId);
+});
+els.inventoryClearPhotosButton.addEventListener("click", clearInventoryPhotos);
 els.inventoryScanAgainButton.addEventListener("click", () => setInventoryView("scan"));
 els.inventoryCreateButton.addEventListener("click", createInventoryItem);
 
