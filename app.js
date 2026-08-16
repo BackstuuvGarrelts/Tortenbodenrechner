@@ -115,7 +115,7 @@ const els = {
   appTitle: document.querySelector("#appTitle"),
   homeButton: document.querySelector("#homeButton"),
   homeView: document.querySelector("#homeView"),
-  calculatorCards: document.querySelectorAll(".calculator-card"),
+  calculatorCards: document.querySelectorAll(".calculator-card[data-mode]"),
   cakeView: document.querySelector("#cakeView"),
   quarkView: document.querySelector("#quarkView"),
   breadView: document.querySelector("#breadView"),
