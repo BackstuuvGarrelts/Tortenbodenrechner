@@ -186,6 +186,8 @@ const els = {
   inventoryList: document.querySelector("#inventoryList"),
   inventoryNewQr: document.querySelector("#inventoryNewQr"),
   inventoryNewName: document.querySelector("#inventoryNewName"),
+  inventoryNewMhd: document.querySelector("#inventoryNewMhd"),
+  inventoryCreateError: document.querySelector("#inventoryCreateError"),
   inventoryCreateButton: document.querySelector("#inventoryCreateButton"),
   cakeRecipeSection: document.querySelector(".cake-recipe-section"),
   quarkRecipeSection: document.querySelector(".quark-recipe-section"),
@@ -877,6 +879,8 @@ function applyInventoryCode(value) {
 
   els.inventoryScanMessage.textContent = `QR ${qrCode} ist noch frei`;
   els.inventoryNewQr.value = qrCode;
+  els.inventoryNewMhd.value = "";
+  els.inventoryCreateError.hidden = true;
   setInventoryView("create");
 }
 
@@ -1103,7 +1107,17 @@ function clearInventoryPhotos() {
 function createInventoryItem() {
   const qrCode = normalizeQrCode(els.inventoryNewQr.value);
   const name = els.inventoryNewName.value.trim();
-  if (!qrCode || !name || inventory.some((item) => item.qrCode === qrCode)) return;
+  const bestBefore = parseCompactDate(els.inventoryNewMhd.value);
+  if (!qrCode || !name || !bestBefore) {
+    els.inventoryCreateError.textContent = "Bitte QR-Code, Zutat und MHD als TTMMJJJJ eintragen.";
+    els.inventoryCreateError.hidden = false;
+    return;
+  }
+  if (inventory.some((item) => item.qrCode === qrCode)) {
+    els.inventoryCreateError.textContent = `QR ${qrCode} ist bereits vergeben.`;
+    els.inventoryCreateError.hidden = false;
+    return;
+  }
 
   const today = new Date();
   const item = {
@@ -1112,7 +1126,7 @@ function createInventoryItem() {
     name,
     container: "",
     filledAt: isoDate(today),
-    bestBefore: isoDate(addDays(today, 30)),
+    bestBefore,
     shelfLifeDays: 30,
     photos: []
   };
@@ -1120,6 +1134,8 @@ function createInventoryItem() {
   selectedInventoryCode = qrCode;
   els.inventoryNewQr.value = "";
   els.inventoryNewName.value = "";
+  els.inventoryNewMhd.value = "";
+  els.inventoryCreateError.hidden = true;
   saveInventory();
   setInventoryView("detail");
 }
@@ -1331,6 +1347,13 @@ els.inventoryPhotoList.addEventListener("click", (event) => {
 });
 els.inventoryClearPhotosButton.addEventListener("click", clearInventoryPhotos);
 els.inventoryScanAgainButton.addEventListener("click", () => setInventoryView("scan"));
+els.inventoryNewMhd.addEventListener("input", () => {
+  els.inventoryNewMhd.value = els.inventoryNewMhd.value.replace(/\D/g, "").slice(0, 8);
+  els.inventoryCreateError.hidden = true;
+});
+els.inventoryNewMhd.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") createInventoryItem();
+});
 els.inventoryCreateButton.addEventListener("click", createInventoryItem);
 
 els.flourInput.addEventListener("input", (event) => syncCakeIngredient("flour", event.target.value));

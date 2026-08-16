@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f7f0e8">
   <title>Backstuuv Garrelts</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=24">
+  <link rel="stylesheet" href="./styles.css?v=25">
 </head>
 <body>
   <section class="pin-gate" id="pinGate" aria-labelledby="pinTitle">
@@ -522,8 +522,14 @@
             <span>Zutat</span>
             <input id="inventoryNewName" type="text" placeholder="Salz">
           </label>
+          <label class="field">
+            <span>MHD</span>
+            <input id="inventoryNewMhd" inputmode="numeric" type="text" maxlength="8" placeholder="TTMMJJJJ">
+            <small>Ohne Punkte, zum Beispiel 16082026</small>
+          </label>
         </div>
         <button class="text-button" id="inventoryCreateButton" type="button">Anlegen</button>
+        <p class="warning" id="inventoryCreateError" hidden>Bitte QR-Code, Zutat und MHD eintragen.</p>
         <button class="back-button inventory-back" type="button">Zurück</button>
       </section>
     </div>
@@ -547,6 +553,6 @@
     </article>
   </template>
 
-  <script src="./app.js?v=24"></script>
+  <script src="./app.js?v=25"></script>
 </body>
 </html>
