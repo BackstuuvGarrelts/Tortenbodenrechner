@@ -725,6 +725,7 @@ function renderInventory() {
   if (isQr) renderInventoryQr();
   if (isPhotos) renderInventoryPhotosView();
   if (isList) renderInventoryList();
+  if (isCreate) renderInventoryCreate();
 }
 
 function renderInventoryCounts() {
@@ -861,6 +862,13 @@ function renderInventoryList() {
     button.append(text, statusText);
     els.inventoryList.append(button);
   });
+}
+
+function renderInventoryCreate() {
+  setTimeout(() => {
+    const target = els.inventoryNewName.value ? els.inventoryNewMhd : els.inventoryNewName;
+    target.focus();
+  }, 0);
 }
 
 function applyInventoryCode(value) {
