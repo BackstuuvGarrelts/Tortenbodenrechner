@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f7f0e8">
-  <title>Backrechner</title>
+  <title>Backstuuv Garrelts</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=13">
+  <link rel="stylesheet" href="./styles.css?v=24">
 </head>
 <body>
   <section class="pin-gate" id="pinGate" aria-labelledby="pinTitle">
@@ -27,7 +27,7 @@
   <main class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Backrechner</p>
+        <p class="eyebrow">Backstuuv Garrelts</p>
         <h1 id="appTitle">Tortenboden Rechner</h1>
       </div>
       <button class="back-button" id="homeButton" type="button" hidden>Zurück</button>
@@ -40,21 +40,21 @@
           <span>Tortenbodenrechner</span>
           <small>Massen für Ringgrößen berechnen</small>
         </button>
+        <button class="calculator-card" data-mode="inventory" type="button">
+          <span>Lagerverwaltung</span>
+          <small>QR-Codes, Haltbarkeit und Neubefüllung</small>
+        </button>
         <button class="calculator-card" data-mode="quark" type="button">
           <span>Quarkbällchenrechner</span>
           <small>Rezeptdurchgänge hochrechnen</small>
-        </button>
-        <button class="calculator-card" data-mode="bread" type="button">
-          <span>Rosinenbrotrechner</span>
-          <small>Grundrezept nach Anzahl hochrechnen</small>
         </button>
         <button class="calculator-card" data-mode="pudding" type="button">
           <span>Puddingrechner</span>
           <small>Wasser und Puddingpulver berechnen</small>
         </button>
-        <button class="calculator-card" data-mode="inventory" type="button">
-          <span>Lagerverwaltung</span>
-          <small>QR-Bottiche, Haltbarkeit und Neubefüllung</small>
+        <button class="calculator-card" data-mode="bread" type="button">
+          <span>Rosinenbrotrechner</span>
+          <small>Grundrezept nach Anzahl hochrechnen</small>
         </button>
       </div>
     </section>
@@ -379,11 +379,11 @@
           </button>
           <button class="calculator-card" data-inventory-action="list" type="button">
             <span>Bestand</span>
-            <small>Alle Zutaten und Bottiche ansehen</small>
+            <small>Alle Zutaten ansehen</small>
           </button>
           <button class="calculator-card" data-inventory-action="create" type="button">
             <span>Neuer QR-Code</span>
-            <small>Neue Zutat oder neuen Bottich anlegen</small>
+            <small>Neue Zutat anlegen</small>
           </button>
         </div>
       </section>
@@ -412,7 +412,6 @@
         <div class="inventory-detail-card" id="inventoryDetailCard">
           <span class="pill" id="inventoryDetailQr">QR 00000</span>
           <h2 id="inventoryDetailName">Zutat</h2>
-          <p id="inventoryDetailContainer" class="inventory-message">Bottich</p>
           <div class="inventory-facts">
             <div class="summary-item">
               <span>Aufgefüllt</span>
@@ -434,23 +433,71 @@
               <input id="inventoryBestBeforeInput" type="date">
             </label>
           </div>
-          <div class="inventory-photo-panel">
-            <div class="section-heading">
-              <h2>Chargenfotos</h2>
-              <label class="text-button file-button">
-                Foto aufnehmen
-                <input id="inventoryPhotoInput" type="file" accept="image/*" capture="environment">
-              </label>
-            </div>
-            <p class="inventory-message">Fotos bleiben als Protokoll bei dieser Zutat gespeichert, bis du sie löschst.</p>
-            <div id="inventoryPhotoList" class="inventory-photo-list"></div>
-            <button class="danger-button" id="inventoryClearPhotosButton" type="button">Fotoprotokoll löschen</button>
-          </div>
         </div>
         <div class="inventory-detail-actions">
+          <button class="back-button" id="inventoryPhotosButton" type="button">Fotos</button>
+          <button class="back-button" id="inventoryChangeQrButton" type="button">QR ändern</button>
           <button class="back-button" id="inventoryScanAgainButton" type="button">Weiter scannen</button>
           <button class="back-button inventory-back" type="button">Zurück</button>
         </div>
+        <button class="danger-button" id="inventoryDeleteButton" type="button">Zutat löschen</button>
+      </section>
+
+      <section class="section inventory-panel" id="inventoryRefillPanel" hidden aria-labelledby="inventoryRefillTitle">
+        <div class="inventory-detail-card">
+          <span class="pill" id="inventoryRefillQr">QR 00000</span>
+          <h2 id="inventoryRefillTitle">Neu befüllt</h2>
+          <p class="inventory-message" id="inventoryRefillName">Zutat</p>
+          <label class="field">
+            <span>MHD</span>
+            <input id="inventoryRefillMhdInput" inputmode="numeric" type="text" maxlength="8" placeholder="TTMMJJJJ">
+            <small>Ohne Punkte eingeben, zum Beispiel 16082026</small>
+          </label>
+          <button class="text-button" id="inventoryRefillSaveButton" type="button">Speichern</button>
+          <p class="warning" id="inventoryRefillError" hidden>Bitte MHD als TTMMJJJJ eingeben.</p>
+        </div>
+        <button class="back-button" id="inventoryRefillBackButton" type="button">Zurück</button>
+      </section>
+
+      <section class="section inventory-panel" id="inventoryQrPanel" hidden aria-labelledby="inventoryQrTitle">
+        <div class="inventory-detail-card">
+          <span class="pill" id="inventoryQrCurrent">QR 00000</span>
+          <h2 id="inventoryQrTitle">QR ändern</h2>
+          <p class="inventory-message" id="inventoryQrName">Zutat</p>
+          <label class="field">
+            <span>Neuer QR-Code</span>
+            <input id="inventoryQrInput" inputmode="numeric" type="text" maxlength="5" placeholder="00050">
+            <small>Nur Zahlen eingeben</small>
+          </label>
+          <div class="camera-box inventory-qr-camera" id="inventoryQrCameraBox" hidden>
+            <video id="inventoryQrVideo" muted playsinline hidden></video>
+            <div id="inventoryQrCameraPlaceholder" class="camera-placeholder">QR vor die Kamera halten</div>
+          </div>
+          <p class="inventory-message" id="inventoryQrScanMessage">QR eintippen oder scannen.</p>
+          <div class="inventory-detail-actions">
+            <button class="back-button" id="inventoryQrCameraButton" type="button">QR scannen</button>
+          </div>
+          <button class="text-button" id="inventoryQrSaveButton" type="button">Speichern</button>
+          <p class="warning" id="inventoryQrError" hidden>Bitte einen freien QR-Code eingeben.</p>
+        </div>
+        <button class="back-button" id="inventoryQrBackButton" type="button">Zurück</button>
+      </section>
+
+      <section class="section inventory-panel" id="inventoryPhotosPanel" hidden aria-labelledby="inventoryPhotosTitle">
+        <div class="inventory-detail-card">
+          <span class="pill" id="inventoryPhotosQr">QR 00000</span>
+          <div class="section-heading inventory-photo-heading">
+            <h2 id="inventoryPhotosTitle">Chargenfotos</h2>
+            <label class="text-button file-button">
+              Foto aufnehmen
+              <input id="inventoryPhotoInput" type="file" accept="image/*" capture="environment">
+            </label>
+          </div>
+          <p class="inventory-message">Fotos bleiben als Protokoll bei dieser Zutat gespeichert, bis du sie löschst.</p>
+          <div id="inventoryPhotoList" class="inventory-photo-list"></div>
+          <button class="danger-button" id="inventoryClearPhotosButton" type="button">Fotoprotokoll löschen</button>
+        </div>
+        <button class="back-button" id="inventoryPhotosBackButton" type="button">Zurück</button>
       </section>
 
       <section class="section inventory-panel" id="inventoryListPanel" hidden aria-labelledby="inventoryListTitle">
@@ -474,10 +521,6 @@
           <label class="field">
             <span>Zutat</span>
             <input id="inventoryNewName" type="text" placeholder="Salz">
-          </label>
-          <label class="field">
-            <span>Bottich</span>
-            <input id="inventoryNewContainer" type="text" placeholder="Bottich 12">
           </label>
         </div>
         <button class="text-button" id="inventoryCreateButton" type="button">Anlegen</button>
@@ -504,6 +547,6 @@
     </article>
   </template>
 
-  <script src="./app.js?v=13"></script>
+  <script src="./app.js?v=24"></script>
 </body>
 </html>

@@ -106,6 +106,8 @@ let activeInventoryStatus = "ok";
 let selectedInventoryCode = "00050";
 let inventoryStream = null;
 let inventoryScanTimer = null;
+let inventoryQrStream = null;
+let inventoryQrScanTimer = null;
 let cakeLocked = true;
 let quarkLocked = true;
 let breadLocked = true;
@@ -128,6 +130,9 @@ const els = {
   inventoryDashboard: document.querySelector("#inventoryDashboard"),
   inventoryScanPanel: document.querySelector("#inventoryScanPanel"),
   inventoryDetailPanel: document.querySelector("#inventoryDetailPanel"),
+  inventoryRefillPanel: document.querySelector("#inventoryRefillPanel"),
+  inventoryQrPanel: document.querySelector("#inventoryQrPanel"),
+  inventoryPhotosPanel: document.querySelector("#inventoryPhotosPanel"),
   inventoryListPanel: document.querySelector("#inventoryListPanel"),
   inventoryCreatePanel: document.querySelector("#inventoryCreatePanel"),
   inventoryOkCount: document.querySelector("#inventoryOkCount"),
@@ -145,12 +150,33 @@ const els = {
   inventoryDetailCard: document.querySelector("#inventoryDetailCard"),
   inventoryDetailQr: document.querySelector("#inventoryDetailQr"),
   inventoryDetailName: document.querySelector("#inventoryDetailName"),
-  inventoryDetailContainer: document.querySelector("#inventoryDetailContainer"),
   inventoryDetailFilled: document.querySelector("#inventoryDetailFilled"),
   inventoryDetailBestBefore: document.querySelector("#inventoryDetailBestBefore"),
   inventoryDetailStatus: document.querySelector("#inventoryDetailStatus"),
   inventoryBestBeforeInput: document.querySelector("#inventoryBestBeforeInput"),
   inventoryRefillButton: document.querySelector("#inventoryRefillButton"),
+  inventoryRefillQr: document.querySelector("#inventoryRefillQr"),
+  inventoryRefillName: document.querySelector("#inventoryRefillName"),
+  inventoryRefillMhdInput: document.querySelector("#inventoryRefillMhdInput"),
+  inventoryRefillSaveButton: document.querySelector("#inventoryRefillSaveButton"),
+  inventoryRefillBackButton: document.querySelector("#inventoryRefillBackButton"),
+  inventoryRefillError: document.querySelector("#inventoryRefillError"),
+  inventoryPhotosButton: document.querySelector("#inventoryPhotosButton"),
+  inventoryChangeQrButton: document.querySelector("#inventoryChangeQrButton"),
+  inventoryDeleteButton: document.querySelector("#inventoryDeleteButton"),
+  inventoryQrCurrent: document.querySelector("#inventoryQrCurrent"),
+  inventoryQrName: document.querySelector("#inventoryQrName"),
+  inventoryQrInput: document.querySelector("#inventoryQrInput"),
+  inventoryQrCameraBox: document.querySelector("#inventoryQrCameraBox"),
+  inventoryQrVideo: document.querySelector("#inventoryQrVideo"),
+  inventoryQrCameraPlaceholder: document.querySelector("#inventoryQrCameraPlaceholder"),
+  inventoryQrScanMessage: document.querySelector("#inventoryQrScanMessage"),
+  inventoryQrCameraButton: document.querySelector("#inventoryQrCameraButton"),
+  inventoryQrSaveButton: document.querySelector("#inventoryQrSaveButton"),
+  inventoryQrBackButton: document.querySelector("#inventoryQrBackButton"),
+  inventoryQrError: document.querySelector("#inventoryQrError"),
+  inventoryPhotosBackButton: document.querySelector("#inventoryPhotosBackButton"),
+  inventoryPhotosQr: document.querySelector("#inventoryPhotosQr"),
   inventoryPhotoInput: document.querySelector("#inventoryPhotoInput"),
   inventoryPhotoList: document.querySelector("#inventoryPhotoList"),
   inventoryClearPhotosButton: document.querySelector("#inventoryClearPhotosButton"),
@@ -160,7 +186,6 @@ const els = {
   inventoryList: document.querySelector("#inventoryList"),
   inventoryNewQr: document.querySelector("#inventoryNewQr"),
   inventoryNewName: document.querySelector("#inventoryNewName"),
-  inventoryNewContainer: document.querySelector("#inventoryNewContainer"),
   inventoryCreateButton: document.querySelector("#inventoryCreateButton"),
   cakeRecipeSection: document.querySelector(".cake-recipe-section"),
   quarkRecipeSection: document.querySelector(".quark-recipe-section"),
@@ -400,6 +425,31 @@ function formatDate(value) {
   }).format(new Date(`${value}T12:00:00`));
 }
 
+function formatCompactDate(value) {
+  const [year, month, day] = String(value).split("-");
+  return `${day}${month}${year}`;
+}
+
+function parseCompactDate(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (digits.length !== 8) return null;
+
+  const day = Number(digits.slice(0, 2));
+  const month = Number(digits.slice(2, 4));
+  const year = Number(digits.slice(4, 8));
+  const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return isoDate(date);
+}
+
 function daysUntil(value) {
   const today = new Date();
   const target = new Date(`${value}T12:00:00`);
@@ -467,7 +517,7 @@ function renderMode() {
     els.appTitle.textContent = "Lagerverwaltung";
     renderInventory();
   } else {
-    els.appTitle.textContent = "Backrechner";
+    els.appTitle.textContent = "Backstuuv Garrelts";
   }
 }
 
@@ -639,6 +689,9 @@ function calculatePudding() {
 }
 
 function setInventoryView(view) {
+  if (inventoryView === "qr" && view !== "qr") {
+    stopInventoryQrCamera();
+  }
   inventoryView = view;
   renderInventory();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -649,17 +702,26 @@ function renderInventory() {
   const isHome = inventoryView === "home";
   const isScan = inventoryView === "scan";
   const isDetail = inventoryView === "detail";
+  const isRefill = inventoryView === "refill";
+  const isQr = inventoryView === "qr";
+  const isPhotos = inventoryView === "photos";
   const isList = inventoryView === "list";
   const isCreate = inventoryView === "create";
 
   els.inventoryDashboard.hidden = !isHome;
   els.inventoryScanPanel.hidden = !isScan;
   els.inventoryDetailPanel.hidden = !isDetail;
+  els.inventoryRefillPanel.hidden = !isRefill;
+  els.inventoryQrPanel.hidden = !isQr;
+  els.inventoryPhotosPanel.hidden = !isPhotos;
   els.inventoryListPanel.hidden = !isList;
   els.inventoryCreatePanel.hidden = !isCreate;
 
   renderInventoryCounts();
   if (isDetail) renderInventoryDetail();
+  if (isRefill) renderInventoryRefill();
+  if (isQr) renderInventoryQr();
+  if (isPhotos) renderInventoryPhotosView();
   if (isList) renderInventoryList();
 }
 
@@ -685,12 +747,46 @@ function renderInventoryDetail() {
   els.inventoryDetailCard.className = `inventory-detail-card ${status}`;
   els.inventoryDetailQr.textContent = `QR ${item.qrCode}`;
   els.inventoryDetailName.textContent = item.name;
-  els.inventoryDetailContainer.textContent = item.container;
   els.inventoryDetailFilled.textContent = formatDate(item.filledAt);
   els.inventoryDetailBestBefore.textContent = formatDate(item.bestBefore);
   els.inventoryDetailStatus.textContent = inventoryStatusText(status, item);
   els.inventoryBestBeforeInput.value = item.bestBefore;
+}
+
+function renderInventoryPhotosView() {
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode) || inventory[0];
+  if (!item) return;
+  selectedInventoryCode = item.qrCode;
+  els.inventoryPhotosQr.textContent = `QR ${item.qrCode}`;
   renderInventoryPhotos(item);
+}
+
+function renderInventoryRefill() {
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode) || inventory[0];
+  if (!item) return;
+  selectedInventoryCode = item.qrCode;
+  els.inventoryRefillQr.textContent = `QR ${item.qrCode}`;
+  els.inventoryRefillName.textContent = item.name;
+  els.inventoryRefillMhdInput.value = formatCompactDate(item.bestBefore);
+  els.inventoryRefillError.hidden = true;
+  setTimeout(() => {
+    els.inventoryRefillMhdInput.focus();
+    els.inventoryRefillMhdInput.select();
+  }, 0);
+}
+
+function renderInventoryQr() {
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode) || inventory[0];
+  if (!item) return;
+  selectedInventoryCode = item.qrCode;
+  els.inventoryQrCurrent.textContent = `QR ${item.qrCode}`;
+  els.inventoryQrName.textContent = item.name;
+  els.inventoryQrInput.value = item.qrCode;
+  els.inventoryQrError.hidden = true;
+  setTimeout(() => {
+    els.inventoryQrInput.focus();
+    els.inventoryQrInput.select();
+  }, 0);
 }
 
 function renderInventoryPhotos(item) {
@@ -757,7 +853,7 @@ function renderInventoryList() {
     const meta = document.createElement("small");
     const statusText = document.createElement("em");
     name.textContent = item.name;
-    meta.textContent = `QR ${item.qrCode} · ${item.container}`;
+    meta.textContent = `QR ${item.qrCode}`;
     statusText.textContent = inventoryStatusText(status, item);
     text.append(name, meta);
     button.append(text, statusText);
@@ -828,14 +924,74 @@ function stopInventoryCamera() {
   els.inventoryCameraButton.textContent = "Kamera starten";
 }
 
-function refillInventoryItem() {
+async function startInventoryQrCamera() {
+  els.inventoryQrScanMessage.textContent = "Kamera wird geöffnet ...";
+  try {
+    inventoryQrStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    });
+    els.inventoryQrCameraBox.hidden = false;
+    els.inventoryQrVideo.srcObject = inventoryQrStream;
+    els.inventoryQrVideo.hidden = false;
+    els.inventoryQrCameraPlaceholder.hidden = true;
+    await els.inventoryQrVideo.play();
+    els.inventoryQrCameraButton.textContent = "Kamera stoppen";
+
+    if (!("BarcodeDetector" in window)) {
+      els.inventoryQrScanMessage.textContent = "QR-Erkennung nicht verfügbar. QR bitte eintippen.";
+      return;
+    }
+
+    const detector = new BarcodeDetector({ formats: ["qr_code"] });
+    inventoryQrScanTimer = setInterval(async () => {
+      const results = await detector.detect(els.inventoryQrVideo);
+      const code = normalizeQrCode(results[0]?.rawValue);
+      if (!code) return;
+      els.inventoryQrInput.value = code;
+      els.inventoryQrError.hidden = true;
+      els.inventoryQrScanMessage.textContent = `QR ${code} erkannt`;
+      stopInventoryQrCamera();
+    }, 700);
+    els.inventoryQrScanMessage.textContent = "QR-Code vor die Kamera halten";
+  } catch {
+    els.inventoryQrScanMessage.textContent = "Kamera konnte nicht geöffnet werden. QR bitte eintippen.";
+    stopInventoryQrCamera();
+  }
+}
+
+function stopInventoryQrCamera() {
+  if (inventoryQrScanTimer) {
+    clearInterval(inventoryQrScanTimer);
+    inventoryQrScanTimer = null;
+  }
+  if (inventoryQrStream) {
+    inventoryQrStream.getTracks().forEach((track) => track.stop());
+    inventoryQrStream = null;
+  }
+  els.inventoryQrCameraBox.hidden = true;
+  els.inventoryQrVideo.hidden = true;
+  els.inventoryQrCameraPlaceholder.hidden = false;
+  els.inventoryQrCameraButton.textContent = "QR scannen";
+}
+
+function saveInventoryRefill() {
   const today = new Date();
   const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode);
   if (!item) return;
+  const value = els.inventoryRefillMhdInput.value;
+
+  const bestBefore = parseCompactDate(value);
+  if (!bestBefore) {
+    els.inventoryRefillError.hidden = false;
+    els.inventoryRefillMhdInput.focus();
+    return;
+  }
+
+  if (!confirm(`${item.name} neu befüllt mit MHD ${formatDate(bestBefore)}?`)) return;
   item.filledAt = isoDate(today);
-  item.bestBefore = isoDate(addDays(today, item.shelfLifeDays));
+  item.bestBefore = bestBefore;
   saveInventory();
-  renderInventory();
+  setInventoryView("detail");
 }
 
 function updateInventoryBestBefore(value) {
@@ -844,6 +1000,43 @@ function updateInventoryBestBefore(value) {
   item.bestBefore = value;
   saveInventory();
   renderInventory();
+}
+
+function saveInventoryQrCode() {
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode);
+  if (!item) return;
+  const qrCode = normalizeQrCode(els.inventoryQrInput.value);
+  if (!qrCode) {
+    els.inventoryQrError.textContent = "Bitte einen gültigen QR-Code eingeben.";
+    els.inventoryQrError.hidden = false;
+    els.inventoryQrInput.focus();
+    return;
+  }
+  if (qrCode !== item.qrCode && inventory.some((entry) => entry.qrCode === qrCode)) {
+    els.inventoryQrError.textContent = `QR ${qrCode} ist bereits vergeben.`;
+    els.inventoryQrError.hidden = false;
+    els.inventoryQrInput.focus();
+    return;
+  }
+
+  item.qrCode = qrCode;
+  selectedInventoryCode = qrCode;
+  saveInventory();
+  setInventoryView("detail");
+}
+
+function deleteInventoryItem() {
+  const item = inventory.find((entry) => entry.qrCode === selectedInventoryCode);
+  if (!item) return;
+  const first = confirm(`${item.name} wirklich löschen?`);
+  if (!first) return;
+  const second = confirm(`Sicher? ${item.name} und alle gespeicherten Fotos werden endgültig gelöscht.`);
+  if (!second) return;
+
+  inventory = inventory.filter((entry) => entry.id !== item.id);
+  selectedInventoryCode = inventory[0]?.qrCode || "";
+  saveInventory();
+  setInventoryView("home");
 }
 
 function readImageFile(file) {
@@ -917,7 +1110,7 @@ function createInventoryItem() {
     id: uid(),
     qrCode,
     name,
-    container: els.inventoryNewContainer.value.trim() || "Neuer Bottich",
+    container: "",
     filledAt: isoDate(today),
     bestBefore: isoDate(addDays(today, 30)),
     shelfLifeDays: 30,
@@ -927,7 +1120,6 @@ function createInventoryItem() {
   selectedInventoryCode = qrCode;
   els.inventoryNewQr.value = "";
   els.inventoryNewName.value = "";
-  els.inventoryNewContainer.value = "";
   saveInventory();
   setInventoryView("detail");
 }
@@ -1047,6 +1239,7 @@ els.calculatorCards.forEach((button) => {
 });
 els.homeButton.addEventListener("click", () => {
   stopInventoryCamera();
+  stopInventoryQrCamera();
   inventoryView = "home";
   setMode("home");
 });
@@ -1095,8 +1288,37 @@ els.inventoryList.addEventListener("click", (event) => {
   selectedInventoryCode = button.dataset.qrCode;
   setInventoryView("detail");
 });
-els.inventoryRefillButton.addEventListener("click", refillInventoryItem);
+els.inventoryRefillButton.addEventListener("click", () => setInventoryView("refill"));
+els.inventoryRefillBackButton.addEventListener("click", () => setInventoryView("detail"));
+els.inventoryRefillSaveButton.addEventListener("click", saveInventoryRefill);
+els.inventoryRefillMhdInput.addEventListener("input", () => {
+  els.inventoryRefillMhdInput.value = els.inventoryRefillMhdInput.value.replace(/\D/g, "").slice(0, 8);
+  els.inventoryRefillError.hidden = true;
+});
+els.inventoryRefillMhdInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") saveInventoryRefill();
+});
 els.inventoryBestBeforeInput.addEventListener("change", (event) => updateInventoryBestBefore(event.target.value));
+els.inventoryPhotosButton.addEventListener("click", () => setInventoryView("photos"));
+els.inventoryChangeQrButton.addEventListener("click", () => setInventoryView("qr"));
+els.inventoryDeleteButton.addEventListener("click", deleteInventoryItem);
+els.inventoryQrBackButton.addEventListener("click", () => setInventoryView("detail"));
+els.inventoryQrCameraButton.addEventListener("click", () => {
+  if (inventoryQrStream) {
+    stopInventoryQrCamera();
+    return;
+  }
+  startInventoryQrCamera();
+});
+els.inventoryQrSaveButton.addEventListener("click", saveInventoryQrCode);
+els.inventoryQrInput.addEventListener("input", () => {
+  els.inventoryQrInput.value = els.inventoryQrInput.value.replace(/\D/g, "").slice(0, 5);
+  els.inventoryQrError.hidden = true;
+});
+els.inventoryQrInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") saveInventoryQrCode();
+});
+els.inventoryPhotosBackButton.addEventListener("click", () => setInventoryView("detail"));
 els.inventoryPhotoInput.addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
   await addInventoryPhoto(file);

@@ -1,9 +1,9 @@
-const CACHE_NAME = "tortenboden-rechner-v13";
+const CACHE_NAME = "tortenboden-rechner-v24";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=13",
-  "./app.js?v=13",
+  "./styles.css?v=24",
+  "./app.js?v=24",
   "./manifest.webmanifest",
   "./icon.svg"
 ];

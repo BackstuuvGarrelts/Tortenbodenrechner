@@ -520,16 +520,12 @@ input:focus {
   margin-top: 12px;
 }
 
-.inventory-photo-panel {
-  border-top: 1px solid var(--line);
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
-  padding-top: 16px;
-}
-
 .file-button {
   cursor: pointer;
+}
+
+.inventory-photo-heading {
+  margin: 12px 0 0;
 }
 
 .file-button input {
