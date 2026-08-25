@@ -362,9 +362,12 @@ function saveState() {
 
 function loadInventory() {
   try {
-    const saved = JSON.parse(localStorage.getItem(INVENTORY_STORAGE_KEY));
-    if (Array.isArray(saved) && saved.length) {
-      return saved.map(normalizeInventoryItem);
+    const rawInventory = localStorage.getItem(INVENTORY_STORAGE_KEY);
+    if (rawInventory !== null) {
+      const saved = JSON.parse(rawInventory);
+      if (Array.isArray(saved)) {
+        return saved.map(normalizeInventoryItem).filter((item) => item.qrCode);
+      }
     }
   } catch {}
 
