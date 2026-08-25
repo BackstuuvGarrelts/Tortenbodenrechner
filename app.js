@@ -3,6 +3,11 @@ const LEGACY_STORAGE_KEY = "tortenboden-rechner:v1";
 const INVENTORY_STORAGE_KEY = "backrechner:inventory:v1";
 const ACCESS_PIN = "6276";
 const UNLOCK_KEY = "tortenboden-rechner:unlocked";
+const CLOUD_SYNC = {
+  supabaseUrl: "",
+  supabaseAnonKey: "",
+  tableName: "inventory_items"
+};
 
 function uid() {
   if (globalThis.crypto && typeof crypto.randomUUID === "function") {
@@ -108,6 +113,7 @@ let inventoryStream = null;
 let inventoryScanTimer = null;
 let inventoryQrStream = null;
 let inventoryQrScanTimer = null;
+let inventoryCloudSaveTimer = null;
 let cakeLocked = true;
 let quarkLocked = true;
 let breadLocked = true;
@@ -139,6 +145,7 @@ const els = {
   inventorySoonCount: document.querySelector("#inventorySoonCount"),
   inventoryExpiredCount: document.querySelector("#inventoryExpiredCount"),
   inventoryStatusCards: document.querySelectorAll("[data-inventory-status]"),
+  inventorySyncStatus: document.querySelector("#inventorySyncStatus"),
   inventoryActionButtons: document.querySelectorAll("[data-inventory-action]"),
   inventoryBackButtons: document.querySelectorAll(".inventory-back"),
   inventoryVideo: document.querySelector("#inventoryVideo"),
@@ -400,6 +407,137 @@ function saveInventory() {
   try {
     localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(inventory));
   } catch {}
+  queueCloudInventorySave();
+}
+
+function saveInventoryLocalOnly() {
+  try {
+    localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(inventory));
+  } catch {}
+}
+
+function isCloudSyncReady() {
+  return CLOUD_SYNC.supabaseUrl.startsWith("https://") && CLOUD_SYNC.supabaseAnonKey.length > 20;
+}
+
+function cloudUrl(path) {
+  return `${CLOUD_SYNC.supabaseUrl.replace(/\/$/, "")}/rest/v1/${path}`;
+}
+
+function cloudHeaders(extra = {}) {
+  return {
+    apikey: CLOUD_SYNC.supabaseAnonKey,
+    Authorization: `Bearer ${CLOUD_SYNC.supabaseAnonKey}`,
+    "Content-Type": "application/json",
+    ...extra
+  };
+}
+
+function setInventorySyncStatus(text, stateName = "local") {
+  if (!els.inventorySyncStatus) return;
+  els.inventorySyncStatus.textContent = text;
+  els.inventorySyncStatus.dataset.state = stateName;
+}
+
+function inventoryToCloudRow(item) {
+  return {
+    id: item.id,
+    qr_code: item.qrCode,
+    name: item.name,
+    container: item.container,
+    filled_at: item.filledAt,
+    best_before: item.bestBefore,
+    shelf_life_days: item.shelfLifeDays,
+    photos: item.photos,
+    updated_at: new Date().toISOString()
+  };
+}
+
+function cloudRowToInventoryItem(row) {
+  return normalizeInventoryItem({
+    id: row.id,
+    qrCode: row.qr_code,
+    name: row.name,
+    container: row.container,
+    filledAt: row.filled_at,
+    bestBefore: row.best_before,
+    shelfLifeDays: row.shelf_life_days,
+    photos: row.photos
+  });
+}
+
+async function fetchCloudInventory() {
+  const response = await fetch(
+    cloudUrl(`${CLOUD_SYNC.tableName}?select=*&order=name.asc`),
+    { headers: cloudHeaders() }
+  );
+  if (!response.ok) throw new Error("Cloud-Bestand konnte nicht geladen werden.");
+  return response.json();
+}
+
+async function saveCloudInventoryItems(items) {
+  if (!items.length) return;
+  const response = await fetch(cloudUrl(`${CLOUD_SYNC.tableName}?on_conflict=id`), {
+    method: "POST",
+    headers: cloudHeaders({ Prefer: "resolution=merge-duplicates,return=minimal" }),
+    body: JSON.stringify(items.map(inventoryToCloudRow))
+  });
+  if (!response.ok) throw new Error("Cloud-Bestand konnte nicht gespeichert werden.");
+}
+
+async function deleteCloudInventoryItem(id) {
+  if (!isCloudSyncReady() || !id) return;
+  try {
+    const response = await fetch(cloudUrl(`${CLOUD_SYNC.tableName}?id=eq.${encodeURIComponent(id)}`), {
+      method: "DELETE",
+      headers: cloudHeaders({ Prefer: "return=minimal" })
+    });
+    if (!response.ok) throw new Error("Cloud-Löschung fehlgeschlagen.");
+    setInventorySyncStatus("Online-Sync aktiv", "online");
+  } catch {
+    setInventorySyncStatus("Online-Sync: Änderung nur lokal gespeichert", "error");
+  }
+}
+
+function queueCloudInventorySave() {
+  if (!isCloudSyncReady()) {
+    setInventorySyncStatus("Speicher: lokal auf diesem Gerät", "local");
+    return;
+  }
+
+  clearTimeout(inventoryCloudSaveTimer);
+  setInventorySyncStatus("Online-Sync: speichert ...", "pending");
+  inventoryCloudSaveTimer = setTimeout(async () => {
+    try {
+      await saveCloudInventoryItems(inventory);
+      setInventorySyncStatus("Online-Sync aktiv", "online");
+    } catch {
+      setInventorySyncStatus("Online-Sync: Änderung nur lokal gespeichert", "error");
+    }
+  }, 250);
+}
+
+async function loadInventoryFromCloud() {
+  if (!isCloudSyncReady()) {
+    setInventorySyncStatus("Speicher: lokal auf diesem Gerät", "local");
+    return;
+  }
+
+  setInventorySyncStatus("Online-Sync: lädt Bestand ...", "pending");
+  try {
+    const rows = await fetchCloudInventory();
+    if (Array.isArray(rows) && rows.length) {
+      inventory = rows.map(cloudRowToInventoryItem).filter((item) => item.qrCode);
+      selectedInventoryCode = inventory[0]?.qrCode || "";
+      saveInventoryLocalOnly();
+    } else if (inventory.length) {
+      await saveCloudInventoryItems(inventory);
+    }
+    setInventorySyncStatus("Online-Sync aktiv", "online");
+    renderInventory();
+  } catch {
+    setInventorySyncStatus("Online-Sync nicht erreichbar - lokal weiterarbeiten", "error");
+  }
 }
 
 function toNumber(value) {
@@ -1051,6 +1189,7 @@ function deleteInventoryItem() {
   inventory = inventory.filter((entry) => entry.id !== item.id);
   selectedInventoryCode = inventory[0]?.qrCode || "";
   saveInventory();
+  deleteCloudInventoryItem(item.id);
   setInventoryView("home");
 }
 
@@ -1465,3 +1604,4 @@ renderBreadIngredients();
 renderPuddingIngredients();
 calculateAll();
 lockAppIfNeeded();
+loadInventoryFromCloud();

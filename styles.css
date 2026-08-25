@@ -173,6 +173,34 @@ h2 {
   transform: translateY(1px);
 }
 
+.app-version {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.sync-status {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 750;
+  text-align: center;
+}
+
+.sync-status[data-state="online"] {
+  color: #2f7d4f;
+}
+
+.sync-status[data-state="pending"] {
+  color: #8a6400;
+}
+
+.sync-status[data-state="error"] {
+  color: #b84332;
+}
+
 .section,
 .summary-band {
   border-top: 1px solid var(--line);
