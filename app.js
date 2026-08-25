@@ -185,6 +185,7 @@ const els = {
   inventoryPhotosBackButton: document.querySelector("#inventoryPhotosBackButton"),
   inventoryPhotosQr: document.querySelector("#inventoryPhotosQr"),
   inventoryPhotoInput: document.querySelector("#inventoryPhotoInput"),
+  inventoryGalleryInput: document.querySelector("#inventoryGalleryInput"),
   inventoryPhotoList: document.querySelector("#inventoryPhotoList"),
   inventoryClearPhotosButton: document.querySelector("#inventoryClearPhotosButton"),
   inventoryScanAgainButton: document.querySelector("#inventoryScanAgainButton"),
@@ -1485,11 +1486,13 @@ els.inventoryQrInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") saveInventoryQrCode();
 });
 els.inventoryPhotosBackButton.addEventListener("click", () => setInventoryView("detail"));
-els.inventoryPhotoInput.addEventListener("change", async (event) => {
+async function handleInventoryPhotoSelection(event) {
   const file = event.target.files?.[0];
   await addInventoryPhoto(file);
   event.target.value = "";
-});
+}
+els.inventoryPhotoInput.addEventListener("change", handleInventoryPhotoSelection);
+els.inventoryGalleryInput.addEventListener("change", handleInventoryPhotoSelection);
 els.inventoryPhotoList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-photo-id]");
   if (!button) return;

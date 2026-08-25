@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f7f0e8">
   <title>Backstuuv Garrelts</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=31">
+  <link rel="stylesheet" href="./styles.css?v=32">
 </head>
 <body>
   <section class="pin-gate" id="pinGate" aria-labelledby="pinTitle">
@@ -57,7 +57,7 @@
           <small>Grundrezept nach Anzahl hochrechnen</small>
         </button>
       </div>
-      <p class="app-version">Version v31 - aktualisiert am 25.08.2026 um 10:47 Uhr</p>
+      <p class="app-version">Version v32 - aktualisiert am 25.08.2026 um 11:15 Uhr</p>
     </section>
 
     <div class="recipe-view" id="cakeView" hidden>
@@ -486,10 +486,16 @@
           <span class="pill" id="inventoryPhotosQr">QR 00000</span>
           <div class="section-heading inventory-photo-heading">
             <h2 id="inventoryPhotosTitle">Chargenfotos</h2>
-            <label class="text-button file-button">
-              Foto aufnehmen
-              <input id="inventoryPhotoInput" type="file" accept="image/*" capture="environment">
-            </label>
+            <div class="photo-buttons">
+              <label class="text-button file-button">
+                Foto aufnehmen
+                <input id="inventoryPhotoInput" type="file" accept="image/*" capture="environment">
+              </label>
+              <label class="back-button file-button">
+                Aus Galerie
+                <input id="inventoryGalleryInput" type="file" accept="image/*">
+              </label>
+            </div>
           </div>
           <p class="inventory-message">Fotos bleiben als Protokoll bei dieser Zutat gespeichert, bis du sie löschst.</p>
           <div id="inventoryPhotoList" class="inventory-photo-list"></div>
@@ -551,6 +557,6 @@
     </article>
   </template>
 
-  <script src="./app.js?v=31"></script>
+  <script src="./app.js?v=32"></script>
 </body>
 </html>
