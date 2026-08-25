@@ -4,8 +4,8 @@ const INVENTORY_STORAGE_KEY = "backrechner:inventory:v1";
 const ACCESS_PIN = "6276";
 const UNLOCK_KEY = "tortenboden-rechner:unlocked";
 const CLOUD_SYNC = {
-  supabaseUrl: "",
-  supabaseAnonKey: "",
+  supabaseUrl: "https://wmakzfqkqamalzuvfrca.supabase.co",
+  supabaseAnonKey: "sb_publishable_Yk8fCrwpCyoougBEALUluw_TFeKnt9v",
   tableName: "inventory_items"
 };
 
